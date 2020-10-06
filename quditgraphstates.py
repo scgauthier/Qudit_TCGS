@@ -184,15 +184,14 @@ def decide_index(dim,adjMat,unk_state):
 		current_string=list(product(dim_list,repeat=num_nodes))[y]
 		trial_state=XZvw(dim,zero_vec,current_string).dot(graph_state)
 		#compare trial and unknown state
+		ratio=unk_state/trial_state
+
+		state_shape=np.shape(unk_state)
+		global_phase=ratio[0,0]
 		#if they are the same, break and return index string
-		#if (trial_state==unk_state).all():
-		if np.allclose(trial_state,unk_state, atol=1e-5):
+		if np.allclose(ratio/global_phase,np.ones(state_shape),atol=1e-5):
 			print('match_found')
-			return current_string
-		#elif (-trial_state==unk_state).all():
-		elif np.allclose(trial_state,unk_state, atol=1e-5):
-			print('match found')
-			return -1, current_string
+			return current_string, global_phase
 		elif y==(dim**num_nodes - 1):
 			print('no match found')
 
@@ -213,13 +212,15 @@ def update_label(dim,adjMat,label,operation):
 Square_cluster_ten=np.array([[0, 1, 0, 0, 0, 1, 0, 0, 0,0],[1,0,1,0,0,0,1,0,0,0],[0,1,0,1,0,0,0,1,0,0],[0,0,1,0,1,0,0,0,1,0],[0,0,0,1,0,0,0,0,0,1],[1,0,0,0,0,0,1,0,0,0],[0,1,0,0,0,1,0,1,0,0],[0,0,1,0,0,0,1,0,1,0],[0,0,0,1,0,0,0,1,0,1],[0,0,0,0,1,0,0,0,1,0]])
 
 graph_state=prepare_graph(5,get_GHZ_adj(3))
-
+#print(graph_state)
 #print(decide_index(2,get_GHZ_adj(5),XZvw(2,[0,0,0,0,0],[0,1,0,1,0]).dot(graph_state)))
 #print(update_label(2,get_GHZ_adj(3),[0,0,0],XZvw(2,[1,0,0],[0,0,0])))
-#new_state=XZvw(5,[0,4,0],[0,0,0]).dot(graph_state)
+new_state=XZvw(5,[2,3,1],[0,0,0]).dot(graph_state)
 #print(new_state)
-#new_label=decide_index(5,get_GHZ_adj(3),new_state)
-#print(new_label)
+#other_state=XZvw(3,[0,0,0],[2,2,2]).dot(graph_state)
+#print(other_state/new_state)
+new_label=decide_index(5,get_GHZ_adj(3),new_state)
+print(new_label)
 #print(update_label(2,get_GHZ_adj(3),new_label,))
 #new_state=np.matrix(new_state)
 #print(new_state.getH().dot(graph_state))
