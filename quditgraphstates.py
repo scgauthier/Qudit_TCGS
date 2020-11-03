@@ -1,7 +1,10 @@
 import numpy as np
+import time
 from math import sqrt,pi
 from cmath import exp
 from itertools import product
+
+start_time=time.time()
 #Specify graph -- specify adjacency matrix of size n x n.
 def specify_graph(sz):
 	sz=int(sz)
@@ -10,10 +13,20 @@ def specify_graph(sz):
 
 	return adjMat
 
+def getbasis(dim):
+	Basis=[]
+	#define basis vectors
+	for val in range(0,dim):
+		basisvec=np.zeros((dim,1))
+		basisvec[(val,0)]=1
+		Basis.append(basisvec)
+	return Basis
+
+
 #define a phase matrix for dimension d, raised to power pow
 def phaseD(dim,pow):
 
-	phase_mat=exp(2*pi*complex(0,1))*np.zeros((dim,dim))
+	phase_mat=complex(1,0)*np.zeros((dim,dim))
 	for val in range(0,dim):
 		basisvec=np.zeros((dim,1))
 		basisvec[(val,0)]=1
@@ -31,13 +44,9 @@ def phaseD(dim,pow):
 
 def shiftD(dim,pow):
 
-	shift_mat=exp(2*pi*complex(0,1))*np.zeros((dim,dim))
-	Basis=[]
-	#define basis vectors
-	for val in range(0,dim):
-		basisvec=np.zeros((dim,1))
-		basisvec[(val,0)]=1
-		Basis.append(basisvec)
+	shift_mat=complex(1,0)*np.zeros((dim,dim))
+	Basis=getbasis(dim)
+
 	for val in range(0,dim):
 		rais_op= np.kron(Basis[(val+1) % dim],np.transpose(Basis[val]))
 		shift_mat+=rais_op
@@ -47,6 +56,18 @@ def shiftD(dim,pow):
 	else:
 		shift_mat=np.linalg.matrix_power(shift_mat,int(pow))
 	return shift_mat
+
+def inmodD(dim,pow):
+
+	inmod_mat=complex(1,0)*np.zeros((dim,dim))
+	Basis=getbasis(dim)
+
+	for val in range(0,dim):
+		inmod_mat[val,(dim-val)%dim]=1
+
+	return inmod_mat
+
+
 
 #define a kronecker product of shift and phase matrices applied
 #according to vector inputs v and w
@@ -114,97 +135,65 @@ def CphaseAB(num_nodes,dim,nodeA,nodeB,pow):
 	#allow powers of operators
 	gate=np.linalg.matrix_power(gate,pow)
 	#get rid of some floating point errors (if analytically=0)
-	tolerance=1e-10
-	for x in range(0,dim**num_nodes):
-		for y in range(0,dim**num_nodes):
-			if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,0)
-			elif abs(gate[x,y].imag) < tolerance:
-				gate[x,y]=complex(gate[x,y].real,0)
-			elif abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,gate[x,y].imag)
+	# tolerance=1e-10
+	# for x in range(0,dim**num_nodes):
+	# 	for y in range(0,dim**num_nodes):
+	# 		if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,0)
+	# 		elif abs(gate[x,y].imag) < tolerance:
+	# 			gate[x,y]=complex(gate[x,y].real,0)
+	# 		elif abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,gate[x,y].imag)
 
 	return gate
 
-#Multi-party CNOT: on node A with source state 1 and taget state 2 for Direction
-#1, vice verse for direction 2
-def MPCnot(num_nodes,dim,Tnode,direction):
+def nonexpplicit_MPG(num_nodes,dim,Snode,direction,inStates):
+	outStates=[]
+	fullState=complex(1,0)*np.zeros((dim**(2*num_nodes),1))
 
-	#phase component of G-CNOT decomposition
-	phase_sum=complex(1,0)*np.zeros((dim,dim))
-	for i in range(0,dim):
-		phase_sum+=phaseD(dim,i)
-
-	term_list1=[]
-	term_list2=[]
-	#G-CNOT12
-	if direction==1:
-		#Generate G-CNOT between nodes A and B with A as source
-		for node in range(0,2*num_nodes):
-			#target node in state 1
-			if node==Tnode:
-				term1=(1/dim)*phase_sum
-				term2= complex(1,0)*np.identity(dim)-(1/dim)*phase_sum
-				#target node in state 2
-			elif node==(Tnode+num_nodes):
-				term1=np.identity(dim)
-				term2=shiftD(dim,1)
-			else:
-				term1=complex(1,0)*np.identity(dim)
-				term2=complex(1,0)*np.identity(dim)
-			term_list1.append(term1)
-			term_list2.append(term2)
-	#G-CNOT21
-	elif direction==2:
-		#Generate G-CNOT between nodes A and B with A as source
-		for node in range(0,2*num_nodes):
-			#target node in state 1
-			if node==(Tnode+num_nodes):
-				term1=(1/dim)*phase_sum
-				term2= complex(1,0)*np.identity(dim)-(1/dim)*phase_sum
-				#target node in state 2
-			elif node==Tnode:
-				term1=np.identity(dim)
-				term2=shiftD(dim,1)
-			else:
-				term1=complex(1,0)*np.identity(dim)
-				term2=complex(1,0)*np.identity(dim)
-			term_list1.append(term1)
-			term_list2.append(term2)
-	else:
-		print('Direction should be specified as 1 for G-CNOT12 or as 2 for G-CNOT21')
+	if direction!=1 and direction!=2:
+		print('Direction should be specified as 1 for gate application in 12 direction or as 2 for application in 21 direction')
 		return
-	#turn lists of matrices into operators using kronecker product
-	val_term1=np.kron(term_list1[0],term_list1[1])
-	val_term2=np.kron(term_list2[0],term_list2[1])
+	for x in range(0,np.shape(inStates)[0]):
 
-	for index in range(1,2*num_nodes-1):
-		val_term1=np.kron(val_term1,term_list1[index+1])
-		val_term2=np.kron(val_term2,term_list2[index+1])
-	#total operator is linear combination
-	gate=val_term1+val_term2
+		for y in range(0,dim):
+			term_list1=[]
+			term_list2=[]
+			#get control for this loop
+			diag=complex(1,0)*np.zeros((dim,dim))
+			diag[y,y]=1
 
-	tolerance=1e-10
-	for x in range(0,dim**(2*num_nodes)):
-		for y in range(0,dim**(2*num_nodes)):
-			if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,0)
-			elif abs(gate[x,y].imag) < tolerance:
-				gate[x,y]=complex(gate[x,y].real,0)
-			elif abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,gate[x,y].imag)
+			for node in range(0,num_nodes):
+				if node==Snode and direction==1:
+					term_list1.append(diag)
+					term_list2.append(shiftD(dim,y))
+				elif node==Snode and direction==2:
+					term_list1.append(shiftD(dim,y))
+					term_list2.append(diag)
+				else:
+					term_list1.append(complex(1,0)*np.identity(dim))
+					term_list2.append(complex(1,0)*np.identity(dim))
 
-	return gate
+			val_term1=np.kron(term_list1[0],term_list1[1])
+			val_term2=np.kron(term_list2[0],term_list2[1])
+			for index in range(1,num_nodes-1):
+				val_term1=np.kron(val_term1,term_list1[index+1])
+				val_term2=np.kron(val_term2,term_list2[index+1])
+
+			ket1=inStates[x][0]
+			ket1=val_term1.dot(ket1)
+			ket2=inStates[x][1]
+			ket2=val_term2.dot(ket2)
+
+			outStates.append([ket1,ket2])
+			fullState+=np.kron(ket1,ket2)
+
+	return outStates,fullState
+
 
 #Multi-party gate: on node A with source state 1 and target state 2 for Direction
 #1, vice verse for direction 2
 def MPG(num_nodes,dim,Snode,direction):
-
-	#phase component of G-CNOT decomposition
-	phase_sum=complex(1,0)*np.zeros((dim,dim))
-	for i in range(0,dim):
-		phase_sum+=phaseD(dim,i)
-
 	gate=complex(1,0)*np.zeros((dim**(2*num_nodes),dim**(2*num_nodes)))
 	#Gate direction 12
 	if direction==1:
@@ -260,15 +249,88 @@ def MPG(num_nodes,dim,Snode,direction):
 		print('Direction should be specified as 1 for gate application in 12 direction or as 2 for application in 21 direction')
 		return
 
-	tolerance=1e-10
-	for x in range(0,dim**(2*num_nodes)):
-		for y in range(0,dim**(2*num_nodes)):
-			if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,0)
-			elif abs(gate[x,y].imag) < tolerance:
-				gate[x,y]=complex(gate[x,y].real,0)
-			elif abs(gate[x,y].real) < tolerance:
-				gate[x,y]=complex(0,gate[x,y].imag)
+	# tolerance=1e-10
+	# for x in range(0,dim**(2*num_nodes)):
+	# 	for y in range(0,dim**(2*num_nodes)):
+	# 		if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,0)
+	# 		elif abs(gate[x,y].imag) < tolerance:
+	# 			gate[x,y]=complex(gate[x,y].real,0)
+	# 		elif abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,gate[x,y].imag)
+	#
+	return gate
+
+
+#Modified MPCnot: on node A with source state 1 and taget state 2 for Direction
+#1, vice verse for direction 2. Applies superposition of X^1 through X^d-1
+#instead of X on target
+def Alt_MPG(num_nodes,dim,Snode,direction):
+
+	gate=complex(1,0)*np.zeros((dim**(2*num_nodes),dim**(2*num_nodes)))
+	#Gate direction 12
+	if direction==1:
+		for x in range(0,dim):
+			term_list=[]
+			#get control for loop
+			diag=complex(1,0)*np.zeros((dim,dim))
+			diag[x,x]=1
+			#Generate G-CNOT between nodes A and A' with A as source
+			for node in range(0,2*num_nodes):
+				#assess if node is current target
+				if node==Snode:
+					term=diag
+				#target node in non-zero state
+				elif node==(Snode+num_nodes):
+					term=shiftD(dim,(x*(dim-1))%dim)
+				else:
+					term=complex(1,0)*np.identity(dim)
+
+				term_list.append(term)
+
+			val_term=np.kron(term_list[0],term_list[1])
+			for index in range(1,2*num_nodes-1):
+				val_term=np.kron(val_term,term_list[index+1])
+
+			gate+=val_term
+	#Gate direction 21
+	elif direction==2:
+		for x in range(0,dim):
+			term_list=[]
+			#get control for loop
+			diag=complex(1,0)*np.zeros((dim,dim))
+			diag[x,x]=1
+			#Generate G-CNOT between nodes A and A' with A as source
+			for node in range(0,2*num_nodes):
+				#assess if node is current target
+				if node==Snode:
+					term=shiftD(dim,(x*(dim-1))%dim)
+				#target node in non-zero state
+				elif node==(Snode+num_nodes):
+					term=diag
+				else:
+					term=complex(1,0)*np.identity(dim)
+
+				term_list.append(term)
+
+			val_term=np.kron(term_list[0],term_list[1])
+			for index in range(1,2*num_nodes-1):
+				val_term=np.kron(val_term,term_list[index+1])
+
+			gate+=val_term
+	else:
+		print('Direction should be specified as 1 for gate application in 12 direction or as 2 for application in 21 direction')
+		return
+
+	# tolerance=1e-10
+	# for x in range(0,dim**(2*num_nodes)):
+	# 	for y in range(0,dim**(2*num_nodes)):
+	# 		if abs(gate[x,y].imag) < tolerance and abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,0)
+	# 		elif abs(gate[x,y].imag) < tolerance:
+	# 			gate[x,y]=complex(gate[x,y].real,0)
+	# 		elif abs(gate[x,y].real) < tolerance:
+	# 			gate[x,y]=complex(0,gate[x,y].imag)
 
 	return gate
 
@@ -347,7 +409,7 @@ def decide_double_index(dim,adjMat,unk_state):
 	graph_state=np.kron(graph_state,graph_state)
 
 	#generate all strings of length 2*num_nodes with entries
-	#in finite fireld of order d
+	#in finite field of order d
 	dim_list=[]
 	for x in range(0,dim):
 		dim_list.append(x)
@@ -385,17 +447,30 @@ def update_label(dim,adjMat,label,operation):
 
 #Square_cluster_ten=np.array([[0, 1, 0, 0, 0, 1, 0, 0, 0,0],[1,0,1,0,0,0,1,0,0,0],[0,1,0,1,0,0,0,1,0,0],[0,0,1,0,1,0,0,0,1,0],[0,0,0,1,0,0,0,0,0,1],[1,0,0,0,0,0,1,0,0,0],[0,1,0,0,0,1,0,1,0,0],[0,0,1,0,0,0,1,0,1,0],[0,0,0,1,0,0,0,1,0,1],[0,0,0,0,1,0,0,0,1,0]])
 
-graph_state=prepare_graph(3,get_GHZ_adj(2))
-
-
-update=MPG(2,3,2,1).dot(MPG(2,3,1,1).dot(MPG(2,3,0,2).dot(np.kron(XZvw(3,[0,0],[0,0]).dot(graph_state),graph_state))))
+graph_state=prepare_graph(3,get_GHZ_adj(7))
+#input=np.kron(XZvw(3,[0,0,0],[0,1,0]).dot(graph_state),XZvw(3,[0,0,0],[0,1,1]).dot(graph_state))
+#update=XZvw(3,[0,0,0,0,0],[1,0,2,1,0]).dot(graph_state)
+#print(decide_index(3,get_GHZ_adj(3),XZvw(3,[0,0,1,0,0],[1,0,0,0,0]).dot(exp(4*pi*complex(0,1)/3)*update)))
+#print(np.identity(5)+exp(4*pi*complex(0,1)/5)*phaseD(5,1)+exp(8*pi*complex(0,1)/5)*phaseD(5,2)+exp(2*pi*complex(0,1)/5)*phaseD(5,3)+exp(6*pi*complex(0,1)/5)*phaseD(5,4))
+#update=Alt_MPCnot(2,3,0,2).dot(Alt_MPCnot(2,3,0,2).dot(np.kron(graph_state,graph_state)))
+#update=Alt_MPCnot(2,3,1,1).dot(Alt_MPCnot(2,3,1,1).dot(update))
 #update=MPG(3,3,0,2).dot(np.kron(graph_state,graph_state))
-print(decide_double_index(3,get_GHZ_adj(2),update))
+#print(decide_double_index(3,get_GHZ_adj(2),update))
+#print(update - np.kron(graph_state,graph_state))
 
 
-#basisvec=np.zeros((81,1))
-#basisvec[23,0]=1
-#print(MPCnot(2,2,0,2).dot(basisvec))
-#print(basisvec)
+#print(gate.dot(np.kron(Basis[2],Basis[0])))
+#update=Alt_MPG(3,3,0,1).dot(input)
+#update=MPG(3,3,1,2).dot(update)
+#update=MPG(3,3,2,2).dot(update)
+#print(decide_double_index(3,get_GHZ_adj(3),update))
+#print(update-input)
 
-#print(MPG(2,3,0,1).dot(basisvec)[50])
+outStates,fullState=nonexpplicit_MPG(7,3,0,1,[[graph_state,graph_state]])
+#print(MPG(3,3,0,1).dot(np.kron(graph_state,graph_state))-fullState)
+print(fullState)
+
+
+
+
+print("--- %s seconds ---" % (time.time()-start_time))
