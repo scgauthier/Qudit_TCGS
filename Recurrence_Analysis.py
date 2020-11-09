@@ -1,64 +1,81 @@
+import time
 import matplotlib.pyplot as plt
 import numpy as np
-from math import log
+from itertools import product
+from operator import add
 
-#function applies specifically to binary-like mixture initial states
-#i.e. states where only qudits belonging to Va undergo dephasing
-#function determines the updated fidelity after one round of protocol P1
-def one_parameter_family(Fin,dim,subset_node_num):
-    Fout=(Fin**2)/(Fin**2 + ((1-Fin)**2)/(dim**subset_node_num -1))
-    return Fout
+#num_nodes: number of nodes in graph
+#dim: dimension of qudit
+#graph_type: GHZ, line
+#input_type: oneParam,
 
-def one_param_fam_psucc(Fin,dim,subset_node_num):
-    psucc=Fin**2 + ((1-Fin)**2)/(dim**subset_node_num - 1)
-    return psucc
+start_time=time.time()
 
-def one_param_fam_Von_Neuman_Ent(Fid,dim,subset_node_num):
-    return (Fid*log((1-Fid)/(Fid*(dim**subset_node_num -1))) - log((1-Fid)/(dim**subset_node_num -1)))
+def assign_nodes(num_nodes,graph_type):
+    if graph_type == 'GHZ':
+        numA=1
+        numB=num_nodes-1
+    elif graph_type =='line':
+        if (num_nodes % 2)==0:
+            numA=num_nodes/2
+            numB=num_nodes/2
+        else:
+            numA=(num_nodes+1)/2
+            numB=(num_nodes-1)/2
+    elif graph_type =='cluster':
+        numA=num_nodes/2
+        numB=num_nodes/2
+    return numA,numB
 
-def plot_one_param_fam_fout_vs_fin(subset_node_num,dimList,fidList):
+def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
+    numA,numB=assign_nodes(num_nodes,graph_type)
 
-    for y in range(0,np.size(dimList)):
-        dim=dimList[y]
-        fidOutList=[]
-        for x in range(0,np.size(fidList)):
-            fidOutList.append(one_parameter_family(fidList[x],dim,subset_node_num))
-        plt.plot(fidList,fidOutList,label="dim = %s " % (dim))
-    plt.legend()
-    plt.xlabel('Input Fidelity')
-    plt.ylabel('Output Fidelity')
-    plt.show()
+    #rows associated with A labels
+    #columns with B labels
+    coef_mat=np.zeros((dim**numA,dim**numB))
 
-#print(one_parameter_family(0.501,3,1))
+    #set coefficients
+    if input_type=='oneParam':
+        coef_mat[0,0]= param+(1-param)/(dim**num_nodes)
 
-def plot_one_param_fam_psucc_vs_fin(subset_node_num,dimList,fidList):
+        for x in range(0,dim**numA):
+            for y in range(0,dim**numB):
+                if x==0 and y==0:
+                    continue
+                else:
+                    coef_mat[x,y]=(1-param)/(dim**num_nodes)
 
-    for y in range(0,np.size(dimList)):
-        dim=dimList[y]
-        psuccList=[]
-        for x in range(0,np.size(fidList)):
-            psuccList.append(one_param_fam_psucc(fidList[x],dim,subset_node_num))
-        plt.plot(fidList,psuccList,label="dim = %s " % (dim))
-    plt.legend()
-    plt.xlabel('Input Fidelity')
-    plt.ylabel('Protocol Probability of Success')
-    plt.show()
+    return coef_mat
 
-def plot_one_param_fam_entdiff_vs_dim(subset_node_num,dimList,fidList):
-    for y in range(0,np.size(fidList)):
-        fid=fidList[y]
-        entDiff=[]
-        for x in range(0,np.size(dimList)):
-            dim=dimList[x]
-            entIn=one_param_fam_Von_Neuman_Ent(fid,dim,subset_node_num)
-            fidOut=one_parameter_family(fid,dim,subset_node_num)
-            entOut=one_param_fam_Von_Neuman_Ent(fidOut,dim,subset_node_num)
-            entDiff.append(entIn-entOut)
-        plt.plot(dimList,entDiff,label="F = %s " % (fid))
-    plt.legend()
-    plt.xlabel('Qudit State Dimension')
-    plt.ylabel('Difference Between Initial and Final Von Neuman Entropy')
-    plt.show()
-plot_one_param_fam_entdiff_vs_dim(1,[2,3,5,7,11,13],[0.501,0.6,0.7,0.8,0.9,0.99])
+def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
+    dim_list=list(range(0,dim))
 
-#plot_one_param_fam_psucc_vs_fin(5,[2,3,5,7,11,13],np.arange(0.501,1,0.01))
+    numA,numB=assign_nodes(num_nodes,graph_type)
+
+    normK=0
+    for x in range(0,dim**numA):
+        for y in range(0,dim**numB):
+            for z in range(0,dim**numB):
+                normK+=cmat_in[x,y]*cmat_in[x,z]
+
+    coef_mat=np.zeros((dim**numA,dim**numB))
+    for x in range(0,dim**numA):
+        for control in range(0,dim**numB):
+            for y in range(0,dim**numB):
+                for z in range(0,dim**numB):
+                    indexA=list(product(dim_list,repeat=numA))[x]
+                    indexControl=list(product(dim_list,repeat=numB))[control]
+                    indexB1=list(product(dim_list,repeat=numB))[y]
+                    indexB2=list(product(dim_list,repeat=numB))[z]
+
+                    if np.allclose([item % dim for item in list(map(add,indexB1,indexB2))],indexControl,atol=1e-5):
+                        coef_mat[x,control]+=(cmat_in[x,y]*cmat_in[x,z])/normK
+
+    return coef_mat
+
+coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.6)
+#print(coef_mat)
+print(P1_update_coefficients(3,3,'GHZ',coef_mat))
+
+
+print("--- %s seconds ---" % (time.time()-start_time))

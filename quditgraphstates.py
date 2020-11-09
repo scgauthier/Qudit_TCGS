@@ -370,6 +370,30 @@ def get_GHZ_adj(num_nodes):
 		adj_mat[x,0]=1
 	return adj_mat
 
+def get_lin_adj(num_nodes):
+	if (num_nodes % 2)!=0:
+		numA=(num_nodes+1)/2
+	else:
+		numA=num_nodes/2
+	numA=int(numA)
+
+	adj_mat=np.zeros((num_nodes,num_nodes))
+	for x in range(0,numA):
+		if x==0:
+			adj_mat[x,numA]=1
+			adj_mat[numA,x]=1
+		elif x==(numA-1):
+			adj_mat[x,numA+x-1]=1
+			adj_mat[numA+x-1,x]=1
+		else:
+			adj_mat[x,numA+x-1]=1
+			adj_mat[x,numA+x]=1
+			adj_mat[numA+x-1,x]=1
+			adj_mat[numA+x,x]=1
+
+	return adj_mat
+
+
 #Have function set the graph state construction as index vec[0]
 #compare input state to all graph basis states for graph type
 #return index of input state
@@ -447,8 +471,9 @@ def update_label(dim,adjMat,label,operation):
 
 #Square_cluster_ten=np.array([[0, 1, 0, 0, 0, 1, 0, 0, 0,0],[1,0,1,0,0,0,1,0,0,0],[0,1,0,1,0,0,0,1,0,0],[0,0,1,0,1,0,0,0,1,0],[0,0,0,1,0,0,0,0,0,1],[1,0,0,0,0,0,1,0,0,0],[0,1,0,0,0,1,0,1,0,0],[0,0,1,0,0,0,1,0,1,0],[0,0,0,1,0,0,0,1,0,1],[0,0,0,0,1,0,0,0,1,0]])
 
-graph_state=prepare_graph(3,get_GHZ_adj(7))
-#input=np.kron(XZvw(3,[0,0,0],[0,1,0]).dot(graph_state),XZvw(3,[0,0,0],[0,1,1]).dot(graph_state))
+#graph_state=prepare_graph(3,get_GHZ_adj(7))
+#graph_state=prepare_graph(3,get_lin_adj(5))
+#input=np.kron(XZvw(3,[0,0,0,0,0],[0,0,0,0,0]).dot(graph_state),XZvw(3,[0,0,0,0,0],[0,0,0,0,1]).dot(graph_state))
 #update=XZvw(3,[0,0,0,0,0],[1,0,2,1,0]).dot(graph_state)
 #print(decide_index(3,get_GHZ_adj(3),XZvw(3,[0,0,1,0,0],[1,0,0,0,0]).dot(exp(4*pi*complex(0,1)/3)*update)))
 #print(np.identity(5)+exp(4*pi*complex(0,1)/5)*phaseD(5,1)+exp(8*pi*complex(0,1)/5)*phaseD(5,2)+exp(2*pi*complex(0,1)/5)*phaseD(5,3)+exp(6*pi*complex(0,1)/5)*phaseD(5,4))
@@ -460,16 +485,16 @@ graph_state=prepare_graph(3,get_GHZ_adj(7))
 
 
 #print(gate.dot(np.kron(Basis[2],Basis[0])))
-#update=Alt_MPG(3,3,0,1).dot(input)
-#update=MPG(3,3,1,2).dot(update)
-#update=MPG(3,3,2,2).dot(update)
+#update=MPG(5,3,0,2).dot(input)
+#update=MPG(5,3,1,2).dot(update)
+#update=MPG(5,3,2,2).dot(update)
+#update=Alt_MPG(3,3,2,2).dot(update)
 #print(decide_double_index(3,get_GHZ_adj(3),update))
 #print(update-input)
 
-outStates,fullState=nonexpplicit_MPG(7,3,0,1,[[graph_state,graph_state]])
+#outStates,fullState=nonexpplicit_MPG(7,3,0,1,[[graph_state,graph_state]])
 #print(MPG(3,3,0,1).dot(np.kron(graph_state,graph_state))-fullState)
-print(fullState)
-
+#print(fullState)
 
 
 
