@@ -55,23 +55,34 @@ def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     normK=0
     for x in range(0,dim**numA):
         for y in range(0,dim**numB):
-            for z in range(0,dim**numB):
-                normK+=cmat_in[x,y]*cmat_in[x,z]
+            for z in range(0,y):
+                normK+=cmat_in[x,y]*cmat_in[x,z]+cmat_in[x,z]*cmat_in[x,y]
+            normK+=(cmat_in[x,y])**2
 
+    indices=list(product(dim_list,repeat=numB))
     coef_mat=np.zeros((dim**numA,dim**numB))
-    for x in range(0,dim**numA):
-        for control in range(0,dim**numB):
-            for y in range(0,dim**numB):
-                for z in range(0,dim**numB):
-                    indexA=list(product(dim_list,repeat=numA))[x]
-                    indexControl=list(product(dim_list,repeat=numB))[control]
-                    indexB1=list(product(dim_list,repeat=numB))[y]
-                    indexB2=list(product(dim_list,repeat=numB))[z]
+    for control in range(0,dim**numB):
+        indexControl=np.array(indices[control])
+        # good_entries=[]
+        for y in range(0,dim**numB):
+            indexB1=np.array(indices[y])
 
-                    if np.allclose([item % dim for item in list(map(add,indexB1,indexB2))],indexControl,atol=1e-5):
-                        coef_mat[x,control]+=(cmat_in[x,y]*cmat_in[x,z])/normK
+            for z in range(0,y+1):
+                indexB2=np.array(indices[z])
+
+                for entry in range(0,numB):
+                    if ((indexB1+indexB2+(dim-1)*indexControl) % dim)[numB-1-entry]!=0:
+                        break
+                    elif entry==numB-1 and y!=z:
+                        for x in range(0,dim**numA):
+                            coef_mat[x,control]+=(cmat_in[x,y]*cmat_in[x,z]+cmat_in[x,z]*cmat_in[x,y])/normK
+                    elif entry==numB-1 and y==z:
+                        for x in range(0,dim**numA):
+                            coef_mat[x,control]+=((cmat_in[x,y])**2)/normK
+
 
     return coef_mat
+
 
 coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.6)
 #print(coef_mat)
