@@ -187,8 +187,8 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
 # do_plotting(fids,psuccs,pcum_list,'P1')
 #manyD_plot(4,[2,3,5,7,9],'line','oneParam',0.6,4,'P1',True)
 
-coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.04)
-print(P2_update_coefficients(3,3,'GHZ',coef_mat))
-
+#coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.04)
+#print(P2_update_coefficients(3,3,'GHZ',coef_mat))
+run_purification(4,3,'line','oneParam',0.6,7,'P1',True,True)
 
 print("--- %s seconds ---" % (time.time()-start_time))
