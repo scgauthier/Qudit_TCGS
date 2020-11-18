@@ -470,7 +470,7 @@ def update_label(dim,adjMat,label,operation):
 	return decide_index(dim,adjMat,operation.dot(in_state))
 
 #Square_cluster_ten=np.array([[0, 1, 0, 0, 0, 1, 0, 0, 0,0],[1,0,1,0,0,0,1,0,0,0],[0,1,0,1,0,0,0,1,0,0],[0,0,1,0,1,0,0,0,1,0],[0,0,0,1,0,0,0,0,0,1],[1,0,0,0,0,0,1,0,0,0],[0,1,0,0,0,1,0,1,0,0],[0,0,1,0,0,0,1,0,1,0],[0,0,0,1,0,0,0,1,0,1],[0,0,0,0,1,0,0,0,1,0]])
-print(list(product([0,1,2],repeat=2)))
+#print(list(product([0,1,2],repeat=2)))
 # graph_state=prepare_graph(3,get_GHZ_adj(5))
 # update=XZvw(3,[0,0,0,0,2],[0,0,0,0,1]).dot(graph_state)
 # print(decide_index(3,get_GHZ_adj(5),update))

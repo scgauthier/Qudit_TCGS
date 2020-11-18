@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 from operator import add
-
+from weyl_covariant_channel import assign_nodes, state_through_channel
 #num_nodes: number of nodes in graph
 #dim: dimension of qudit
 #graph_type: GHZ, line
-#input_type: oneParam,
+#input_type: oneParam, DP
 #param: x for one param states, // related to input fidelity
 #iterations: Number of times to repeat purification protocol
 #first_subP: 'P1' or 'P2' // Choice determines which purification is performed first
@@ -16,31 +16,33 @@ from operator import add
 
 start_time=time.time()
 
-def assign_nodes(num_nodes,graph_type):
-    if graph_type == 'GHZ':
-        numA=1
-        numB=num_nodes-1
-    elif graph_type =='line':
-        if (num_nodes % 2)==0:
-            numA=int(num_nodes/2)
-            numB=int(num_nodes/2)
-        else:
-            numA=int((num_nodes+1)/2)
-            numB=int((num_nodes-1)/2)
-    elif graph_type =='cluster':
-        numA=int(num_nodes/2)
-        numB=int(num_nodes/2)
-    return numA,numB
+# def assign_nodes(num_nodes,graph_type):
+#     if graph_type == 'GHZ':
+#         numA=1
+#         numB=num_nodes-1
+#     elif graph_type =='line':
+#         if (num_nodes % 2)==0:
+#             numA=int(num_nodes/2)
+#             numB=int(num_nodes/2)
+#         else:
+#             numA=int((num_nodes+1)/2)
+#             numB=int((num_nodes-1)/2)
+#     elif graph_type =='cluster':
+#         numA=int(num_nodes/2)
+#         numB=int(num_nodes/2)
+#     return numA,numB
 
 def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
-    numA,numB=assign_nodes(num_nodes,graph_type)
-
-    #rows associated with A labels
-    #columns with B labels
-    coef_mat=np.zeros((dim**numA,dim**numB))
 
     #set coefficients
     if input_type=='oneParam':
+
+        numA,numB=assign_nodes(num_nodes,graph_type)
+
+        #rows associated with A labels
+        #columns with B labels
+        coef_mat=np.zeros((dim**numA,dim**numB))
+
         coef_mat[0,0]= param+(1-param)/(dim**num_nodes)
 
         for x in range(0,dim**numA):
@@ -49,6 +51,9 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
                     continue
                 else:
                     coef_mat[x,y]=(1-param)/(dim**num_nodes)
+
+    elif input_type=='DP':
+        coef_mat=state_through_channel(dim,num_nodes,graph_type,param)
 
     return coef_mat
 
@@ -181,7 +186,9 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
     plt.xlabel('Number of purifications (beginning with {})'.format(subP))
     plt.ylabel('Fidelity')
     plt.show()
-
+#***************************************************************************#
+#for depolarized state
+#***************************************************************************#
 
 #run_purification(5,3,'line','oneParam',0.6,6,'P2',True,False)
 # do_plotting(fids,psuccs,pcum_list,'P1')
@@ -189,6 +196,6 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
 
 #coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.04)
 #print(P2_update_coefficients(3,3,'GHZ',coef_mat))
-run_purification(4,3,'line','oneParam',0.6,7,'P1',True,True)
+#run_purification(4,3,'line','oneParam',0.6,7,'P1',True,True)
 
 print("--- %s seconds ---" % (time.time()-start_time))
