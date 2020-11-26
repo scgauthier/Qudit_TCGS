@@ -44,7 +44,7 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
 
     elif input_type=='DP':
         pstring=str(param)
-        filename='Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        filename='../Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
         if os.path.isfile(filename):
             coef_mat=np.loadtxt(filename).reshape(dim**numA,dim**numB)
         else:
@@ -189,7 +189,7 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
 #***************************************************************************#
 #for depolarized state
 #***************************************************************************#
-def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternation):
+def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternation,plotting):
     csubP=subP
     delta_fid=np.zeros((iters,np.shape(paramList)[0]))
     fidsOut=np.zeros((iters,np.shape(paramList)[0]))
@@ -225,28 +225,39 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     for z in range(iters):
         for y in range(1,np.shape(paramList)[0]-1):
             if (fidsOut[z,y-1]>fidsIn[0,y-1]) and (fidsOut[z,y+1]<fidsIn[0,y+1]):
-                print('For iteration {}, a critical q value is = '.format(z), paramList[y])
                 if z==(iters-1):
                     qcrit=paramList[y]
+            if (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y+1],(1/dim),abs_tol=4e-3)):
+                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+                afile=open(filename,'a')
+                afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
+                afile.close()
+            elif (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y-1],(1/dim),abs_tol=4e-3)):
+                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+                afile=open(filename,'a')
+                afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
+                afile.close()
 
     #Keep record of qcrit
-    filename='Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+    filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
     afile=open(filename,'a')
     afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
     afile.close()
 
-    plt.figure()
-    plt.plot(paramList,fidsIn[0,:],label='Initial Fidelity')
-    for z in range(iters):
-        plt.plot(paramList,fidsOut[z,:],label='F out iteration {}'.format(z))
-    plt.legend()
-    plt.xlabel('Depolarization channel parameter q',fontsize=18)
-    plt.ylabel('Fidelity to perfect graph state', fontsize=18)
-    plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
-    plt.show()
+    #plot
+    if plotting==True:
+        plt.figure()
+        plt.plot(paramList,fidsIn[0,:],label='Initial Fidelity')
+        for z in range(iters):
+            plt.plot(paramList,fidsOut[z,:],label='F out iteration {}'.format(z))
+        plt.legend()
+        plt.xlabel('Depolarization channel parameter q',fontsize=18)
+        plt.ylabel('Fidelity to perfect graph state', fontsize=18)
+        plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
+        plt.show()
 
 #**************************************************************************#
 
-run_depolarized_study(2,8,'GHZ',np.arange(0,0.52,0.01),'P1',10,True)
+run_depolarized_study(2,7,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,False)
 
 print("--- %s seconds ---" % (time.time()-start_time))

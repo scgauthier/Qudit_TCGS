@@ -132,7 +132,7 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     for x in range(np.shape(paramList)[0]):
         pstring=str(paramList[x])
-        filename='Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        filename='../Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
         if os.path.isfile(filename):
             continue
         else:
@@ -144,5 +144,5 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     return
 #***************************************************************************#
-# save_depolarized_states(2,8,'GHZ',np.arange(0,0.7,0.01))
+save_depolarized_states(2,7,'GHZ',np.arange(0,0.6,0.01))
 # print(state_through_channel(2,3,'GHZ',0.05)[1,0])
