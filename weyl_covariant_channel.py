@@ -1,3 +1,4 @@
+import os.path
 import numpy as np
 from itertools import product
 from quditgraphstates import get_GHZ_adj
@@ -69,57 +70,6 @@ def label_update(dim,adj_mat,target_node,labelIn,error_label):
     return label
 
 #***************************************************************************#
-# def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
-#
-#     input_coef_mat=np.copy(coef_mat)
-#     new_coef_mat=np.zeros((dim**numA,dim**numB))
-#
-#     Alabels=list(product(np.arange(0,dim),repeat=numA))
-#     Blabels=list(product(np.arange(0,dim),repeat=numB))
-#     for row in range(dim**numA):
-#         for col in range(dim**numB):
-#
-#             temp_coef_mat=np.copy(coef_mat)
-#             # print(temp_coef_mat)
-#             labelIn=np.array(Alabels[row]+Blabels[col])
-#             #print('label in',labelIn)
-#             #create list of effected labels
-#             altered=[]
-#             if input_coef_mat[row,col]>0:
-#                 #print('in use')
-#                 for x in range(dim**2):
-#                     error_label=list(product(np.arange(0,dim),repeat=2))[x]
-#
-#                     labelOut=label_update(dim,adj_mat,target_node,labelIn,error_label)
-#                     #print('label out', labelOut)
-#
-#                     if compare_labels(labelOut,labelIn):
-#                         altered.append(labelOut)
-#                         #print('altered',altered)
-#
-#             #determine which coefficients need to change and change them
-#             for entry in range(np.shape(altered)[0]):
-#                 focus=altered[entry]
-#                 for id_row in range(dim**numA):
-#                     for id_col in range(dim**numB):
-#                         label=np.array(Alabels[id_row]+Blabels[id_col])
-#
-#                         # if (not compare_labels(focus,label)):
-#                         #     temp_coef_mat[id_row,id_col]+=param/(dim**2 -1)
-#                         if (not compare_labels(focus,label)) and temp_coef_mat[id_row,id_col]!=0:
-#                             temp_coef_mat[id_row,id_col]*=param/(dim**2 -1)
-#                         elif (not compare_labels(focus,label)):
-#                             temp_coef_mat[id_row,id_col]+=param/(dim**2 -1)
-#             new_coef_mat=np.add(new_coef_mat,temp_coef_mat)
-#
-#     #update perfect state labels
-#     input_coef_mat*=(1-param)
-#     new_coef_mat=np.add(new_coef_mat,input_coef_mat)
-#
-#     return new_coef_mat
-#
-# #***************************************************************************#
-#***************************************************************************#
 def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
 
     input_coef_mat=np.copy(coef_mat)
@@ -178,10 +128,21 @@ def state_through_channel(dim,num_nodes,graph_type,param):
     return coef_mat
 
 #***************************************************************************#
+def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
-# coef_mat=perfect_coef_mat(2,1,2)
-# print(coef_mat)
-# coef_mat=qudit_through_channel(2,1,2,get_GHZ_adj(3),1,coef_mat,0.05)
-#print(coef_mat)
-# print(qudit_through_channel(2,1,2,get_GHZ_adj(3),2,coef_mat,0.05))
-print(state_through_channel(7,4,'line',0.05))
+    for x in range(np.shape(paramList)[0]):
+        pstring=str(paramList[x])
+        filename='Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        if os.path.isfile(filename):
+            continue
+        else:
+            afile=open(filename,'w')
+            for row in state_through_channel(dim,num_nodes,graph_type,paramList[x]):
+                np.savetxt(afile,row)
+
+            afile.close()
+
+    return
+#***************************************************************************#
+# save_depolarized_states(2,8,'GHZ',np.arange(0,0.7,0.01))
+# print(state_through_channel(2,3,'GHZ',0.05)[1,0])

@@ -4,7 +4,7 @@ from math import sqrt,pi
 from cmath import exp
 from itertools import product
 
-start_time=time.time()
+# start_time=time.time()
 #Specify graph -- specify adjacency matrix of size n x n.
 def specify_graph(sz):
 	sz=int(sz)
@@ -500,4 +500,4 @@ def update_label(dim,adjMat,label,operation):
 
 
 
-print("--- %s seconds ---" % (time.time()-start_time))
+# print("--- %s seconds ---" % (time.time()-start_time))

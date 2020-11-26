@@ -1,9 +1,13 @@
 import time
+import os.path
 import matplotlib.pyplot as plt
 import numpy as np
+from math import isclose
 from itertools import product
 from operator import add
 from weyl_covariant_channel import assign_nodes, state_through_channel
+
+#********VARIABLES********************************************************#
 #num_nodes: number of nodes in graph
 #dim: dimension of qudit
 #graph_type: GHZ, line
@@ -13,31 +17,17 @@ from weyl_covariant_channel import assign_nodes, state_through_channel
 #first_subP: 'P1' or 'P2' // Choice determines which purification is performed first
 #alternation: True, Flase // If true, alternate between protocols P1 and P2
 #doplot: True, False // If true, plot fidelity over rounds, as well as success probability
+#**************************************************************************#
 
 start_time=time.time()
 
-# def assign_nodes(num_nodes,graph_type):
-#     if graph_type == 'GHZ':
-#         numA=1
-#         numB=num_nodes-1
-#     elif graph_type =='line':
-#         if (num_nodes % 2)==0:
-#             numA=int(num_nodes/2)
-#             numB=int(num_nodes/2)
-#         else:
-#             numA=int((num_nodes+1)/2)
-#             numB=int((num_nodes-1)/2)
-#     elif graph_type =='cluster':
-#         numA=int(num_nodes/2)
-#         numB=int(num_nodes/2)
-#     return numA,numB
-
+#**************************************************************************#
 def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
+
+    numA,numB=assign_nodes(num_nodes,graph_type)
 
     #set coefficients
     if input_type=='oneParam':
-
-        numA,numB=assign_nodes(num_nodes,graph_type)
 
         #rows associated with A labels
         #columns with B labels
@@ -53,10 +43,16 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
                     coef_mat[x,y]=(1-param)/(dim**num_nodes)
 
     elif input_type=='DP':
-        coef_mat=state_through_channel(dim,num_nodes,graph_type,param)
+        pstring=str(param)
+        filename='Depolarized_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        if os.path.isfile(filename):
+            coef_mat=np.loadtxt(filename).reshape(dim**numA,dim**numB)
+        else:
+            coef_mat=state_through_channel(dim,num_nodes,graph_type,param)
 
     return coef_mat
 
+#**************************************************************************#
 def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     dim_list=list(range(0,dim))
 
@@ -93,6 +89,7 @@ def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
 
     return normK,coef_mat
 
+#**************************************************************************#
 def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     dim_list=list(range(0,dim))
 
@@ -129,6 +126,7 @@ def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
 
     return normK,coef_mat
 
+#**************************************************************************#
 def single_plot(fids,psuccs,pcum_list,subP):
     xdat=range(0,np.size(fids))
 
@@ -144,6 +142,7 @@ def single_plot(fids,psuccs,pcum_list,subP):
     ax2.legend()
     plt.show()
 
+#**************************************************************************#
 def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,alternation,doplot):
     csubP=subP
     fids=[]
@@ -154,7 +153,7 @@ def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,altern
     coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,param)
     fids.append(coef_mat[0,0])
 
-    for x in range(0,iters):
+    for x in range(iters):
         if csubP == 'P1':
             normK,coef_mat=P1_update_coefficients(num_nodes,dim,graph_type,coef_mat)
             if alternation==True:
@@ -175,6 +174,7 @@ def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,altern
 
     return fids
 
+#**************************************************************************#
 def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternation):
 
     xdat=range(iters+1)
@@ -189,13 +189,64 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
 #***************************************************************************#
 #for depolarized state
 #***************************************************************************#
+def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternation):
+    csubP=subP
+    delta_fid=np.zeros((iters,np.shape(paramList)[0]))
+    fidsOut=np.zeros((iters,np.shape(paramList)[0]))
+    fidsIn=np.zeros((iters,np.shape(paramList)[0]))
 
-#run_purification(5,3,'line','oneParam',0.6,6,'P2',True,False)
-# do_plotting(fids,psuccs,pcum_list,'P1')
-#manyD_plot(4,[2,3,5,7,9],'line','oneParam',0.6,4,'P1',True)
+    for x in range(np.shape(paramList)[0]):
+        param=paramList[x]
+        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',param)
 
-#coef_mat=get_input_coefficients(3,3,'GHZ','oneParam',0.04)
-#print(P2_update_coefficients(3,3,'GHZ',coef_mat))
-#run_purification(4,3,'line','oneParam',0.6,7,'P1',True,True)
+        for z in range(iters):
+
+            fidin=coef_mat[0,0]
+            fidsIn[z,x]=coef_mat[0,0]
+
+            if csubP=='P1':
+                normK,coef_mat=P1_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+                delta_fid[z,x]=(coef_mat[0,0]-fidin)
+                if alternation==True:
+                    csubP='P2'
+
+            elif csubP=='P2':
+                normK,coef_mat=P2_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+                delta_fid[z,x]=(coef_mat[0,0]-fidin)
+                if alternation==True:
+                    csubP='P1'
+
+            else:
+                print('field subP should be specified as either P1 or P2 \n', 'Example: to start with P1 enter P1')
+                return
+
+            fidsOut[z,x]=coef_mat[0,0]
+
+    for z in range(iters):
+        for y in range(1,np.shape(paramList)[0]-1):
+            if (fidsOut[z,y-1]>fidsIn[0,y-1]) and (fidsOut[z,y+1]<fidsIn[0,y+1]):
+                print('For iteration {}, a critical q value is = '.format(z), paramList[y])
+                if z==(iters-1):
+                    qcrit=paramList[y]
+
+    #Keep record of qcrit
+    filename='Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+    afile=open(filename,'a')
+    afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
+    afile.close()
+
+    plt.figure()
+    plt.plot(paramList,fidsIn[0,:],label='Initial Fidelity')
+    for z in range(iters):
+        plt.plot(paramList,fidsOut[z,:],label='F out iteration {}'.format(z))
+    plt.legend()
+    plt.xlabel('Depolarization channel parameter q',fontsize=18)
+    plt.ylabel('Fidelity to perfect graph state', fontsize=18)
+    plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
+    plt.show()
+
+#**************************************************************************#
+
+run_depolarized_study(2,8,'GHZ',np.arange(0,0.52,0.01),'P1',10,True)
 
 print("--- %s seconds ---" % (time.time()-start_time))
