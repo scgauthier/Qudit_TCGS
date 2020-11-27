@@ -258,6 +258,6 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
 
 #**************************************************************************#
 
-run_depolarized_study(2,7,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,False)
+# run_depolarized_study(2,7,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,False)
 
 print("--- %s seconds ---" % (time.time()-start_time))

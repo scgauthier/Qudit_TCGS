@@ -144,5 +144,6 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     return
 #***************************************************************************#
-save_depolarized_states(2,7,'GHZ',np.arange(0,0.6,0.01))
+# for N in range(2,12):
+#     save_depolarized_states(2,N,'GHZ',np.arange(0,0.6,0.01))
 # print(state_through_channel(2,3,'GHZ',0.05)[1,0])
