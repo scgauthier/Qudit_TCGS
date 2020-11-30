@@ -22,6 +22,28 @@ from weyl_covariant_channel import assign_nodes, state_through_channel
 start_time=time.time()
 
 #**************************************************************************#
+def save_oneParam_coefficients(num_nodes,dim,graph_type,param):
+    numA,numB=assign_nodes(num_nodes,graph_type)
+
+    coef_mat=np.zeros((dim**numA,dim**numB))
+    coef_mat[0,0]=param+(1-param)/(dim**num_nodes)
+
+    for x in range(0,dim**numA):
+        for y in range(0,dim**numB):
+            if x==0 and y==0:
+                continue
+            else:
+                coef_mat[x,y]=(1-param)/(dim**num_nodes)
+
+    filename='../oneParam_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,param)
+    if not os.path.isfile(filename):
+        afile=open(filename,'w')
+        for row in coef_mat:
+            np.savetxt(afile,row)
+
+        afile.close()
+    return
+#**************************************************************************#
 def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
 
     numA,numB=assign_nodes(num_nodes,graph_type)
@@ -29,18 +51,23 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
     #set coefficients
     if input_type=='oneParam':
 
-        #rows associated with A labels
-        #columns with B labels
-        coef_mat=np.zeros((dim**numA,dim**numB))
+        filename='../oneParam_Graph_States/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,param)
+        if os.path.isfile(filename):
+            coef_mat=np.loadtxt(filename).reshape(dim**numA,dim**numB)
+        else:
+            print('generate')
+            #rows associated with A labels
+            #columns with B labels
+            coef_mat=np.zeros((dim**numA,dim**numB))
 
-        coef_mat[0,0]= param+(1-param)/(dim**num_nodes)
+            coef_mat[0,0]= param+(1-param)/(dim**num_nodes)
 
-        for x in range(0,dim**numA):
-            for y in range(0,dim**numB):
-                if x==0 and y==0:
-                    continue
-                else:
-                    coef_mat[x,y]=(1-param)/(dim**num_nodes)
+            for x in range(0,dim**numA):
+                for y in range(0,dim**numB):
+                    if x==0 and y==0:
+                        continue
+                    else:
+                        coef_mat[x,y]=(1-param)/(dim**num_nodes)
 
     elif input_type=='DP':
         pstring=str(param)
@@ -257,6 +284,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.show()
 
 #**************************************************************************#
+
 
 # run_depolarized_study(2,7,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,False)
 
