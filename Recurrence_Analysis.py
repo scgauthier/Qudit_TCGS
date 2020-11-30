@@ -254,12 +254,12 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
             if (fidsOut[z,y-1]>fidsIn[0,y-1]) and (fidsOut[z,y+1]<fidsIn[0,y+1]):
                 if z==(iters-1):
                     qcrit=paramList[y]
-            if (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y+1],(1/dim),abs_tol=4e-3)):
+            if (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y+1],(1/dim),abs_tol=4e-3)) and z==(iters-1):
                 filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
                 afile=open(filename,'a')
                 afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
                 afile.close()
-            elif (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y-1],(1/dim),abs_tol=4e-3)):
+            elif (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y-1],(1/dim),abs_tol=4e-3)) and z==(iters-1):
                 filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
                 afile=open(filename,'a')
                 afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
