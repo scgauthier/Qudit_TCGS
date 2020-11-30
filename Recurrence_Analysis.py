@@ -281,8 +281,8 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
         plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
-        figname='../Figures/DP_{}_{}_{}_{}'.format(dim,num_nodes,graph_type,subP)
-        plt.savefig(figname,dpi=300,format='jpg')
+        figname='../Figures/DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
+        plt.savefig(figname,dpi=300)
 
 #**************************************************************************#
 
