@@ -276,6 +276,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.figure()
         plt.plot(paramList,fidsIn[0,:],label='Initial Fidelity')
         for z in range(iters):
+            if (z%2)!=0 or z==0 or z==(iters-1):
             plt.plot(paramList,fidsOut[z,:],label='F out iteration {}'.format(z))
         plt.legend()
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
