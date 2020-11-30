@@ -281,11 +281,12 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
         plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
-        plt.show()
+        figname='../Figures/DP_{}_{}_{}_{}'.format(dim,num_nodes,graph_type,subP)
+        plt.savefig(figname,dpi=300,format='jpg')
 
 #**************************************************************************#
 
 
-# run_depolarized_study(2,7,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,False)
+# run_depolarized_study(2,3,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,True)
 
 print("--- %s seconds ---" % (time.time()-start_time))
