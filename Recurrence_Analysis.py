@@ -1,5 +1,6 @@
 import time
 import os.path
+import multiprocessing
 import matplotlib.pyplot as plt
 import numpy as np
 from math import isclose
@@ -216,77 +217,95 @@ def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternat
 #***************************************************************************#
 #for depolarized state
 #***************************************************************************#
-def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternation,plotting):
-    csubP=subP
-    delta_fid=np.zeros((iters,np.shape(paramList)[0]))
-    fidsOut=np.zeros((iters,np.shape(paramList)[0]))
-    fidsIn=np.zeros((iters,np.shape(paramList)[0]))
+def get_fidsOut(param_tuple):
+    """wrapper preparing for using map (which has issues with multiple variables
+    -> pack all vars in one tuple). x[0]<-paramList, x[1]<-dim,x[2]<-num_nodes,x[3]=repeats
+    x[4]<-graph_type, x[5]<-iters,x[6]<-FI==fidsIn proxy,x[7]<-csubP, x[8]<-alternation
+    x[9]<-FO==fidsOut proxy,x[10]<-x"""
 
-    for x in range(np.shape(paramList)[0]):
-        param=paramList[x]
-        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',param)
+    paramList,dim,num_nodes,repeats,graph_type,iters,fidsIn,csubP,alternation,FO,x=param_tuple #unpack
+    param=paramList[x]
 
-        for z in range(iters):
-
-            fidin=coef_mat[0,0]
-            fidsIn[z,x]=coef_mat[0,0]
-
-            if csubP=='P1':
-                normK,coef_mat=P1_update_coefficients(num_nodes,dim,graph_type,coef_mat)
-                delta_fid[z,x]=(coef_mat[0,0]-fidin)
-                if alternation==True:
-                    csubP='P2'
-
-            elif csubP=='P2':
-                normK,coef_mat=P2_update_coefficients(num_nodes,dim,graph_type,coef_mat)
-                delta_fid[z,x]=(coef_mat[0,0]-fidin)
-                if alternation==True:
-                    csubP='P1'
-
-            else:
-                print('field subP should be specified as either P1 or P2 \n', 'Example: to start with P1 enter P1')
-                return
-
-            fidsOut[z,x]=coef_mat[0,0]
+    clean_coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',param)
+    coef_mat=np.copy(clean_coef_mat)
 
     for z in range(iters):
-        for y in range(1,np.shape(paramList)[0]-1):
-            if (fidsOut[z,y-1]>fidsIn[0,y-1]) and (fidsOut[z,y+1]<fidsIn[0,y+1]):
+
+        fidin=coef_mat[0,0]
+        fidsIn[x+(z*repeats)]=coef_mat[0,0]
+
+        if csubP=='P1':
+            normK,coef_mat=P1_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+            if alternation==True:
+                csubP='P2'
+
+        elif csubP=='P2':
+            normK,coef_mat=P2_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+            if alternation==True:
+                csubP='P1'
+
+        else:
+            print('field subP should be specified as either P1 or P2 \n', 'Example: to start with P1 enter P1')
+            return
+
+        FO[x+(z*repeats)]=coef_mat[0,0]
+
+    # return FO,FI
+
+
+#**************************************************************************#
+def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternation,plotting):
+    csubP=subP
+    repeats=np.shape(paramList)[0]
+    fidsOut=np.zeros((iters*repeats,))
+    fidsIn=np.zeros((iters*repeats,))
+
+    manager=multiprocessing.Manager() #create manager to handle shared objects
+    FO=manager.Array('f',fidsOut) #Proxy for shared array
+    FI=manager.Array('f',fidsIn)
+    mypool=multiprocessing.Pool() #Create pool of worker processes
+
+    mypool.map(get_fidsOut,[(paramList,dim,num_nodes,repeats,graph_type,iters,FI,csubP,alternation,FO,x) for x in range(repeats)])
+    for z in range(iters):
+        for y in range(1,repeats-1):
+            if (FO[(y-1) +(z*repeats)]>FI[y-1]) and (FO[(y+1)+(z*repeats)]<FI[y+1]):
                 if z==(iters-1):
                     qcrit=paramList[y]
-            if (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y+1],(1/dim),abs_tol=4e-3)) and z==(iters-1):
-                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+            if (FO[y+(z*repeats)]>(1/dim)) and isclose(FO[(y+1)+(z*repeats)],(1/dim),abs_tol=5e-3)) and z==(iters-1):
+                filename='../Limit_q/Alt_{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
                 afile=open(filename,'a')
                 afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
                 afile.close()
-            elif (isclose(fidsOut[z,y],(1/dim),abs_tol=2e-3) and not isclose(fidsOut[z,y-1],(1/dim),abs_tol=4e-3)) and z==(iters-1):
-                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
-                afile=open(filename,'a')
-                afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
-                afile.close()
+            # elif (isclose(FO[y+(z*repeats)],(1/dim),abs_tol=2e-3) and not isclose(FO[(y-1)+(z*repeats)],(1/dim),abs_tol=4e-3)) and z==(iters-1):
+            #     filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+            #     afile=open(filename,'a')
+            #     afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
+            #     afile.close()
 
-    #Keep record of qcrit
-    filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
-    afile=open(filename,'a')
-    afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
-    afile.close()
+
+    # #Keep record of qcrit
+    # filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+    # afile=open(filename,'a')
+    # afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
+    # afile.close()
 
     #plot
     if plotting==True:
         plt.figure()
-        plt.plot(paramList,fidsIn[0,:],label='Initial Fidelity')
+        plt.plot(paramList,FI[0:repeats],label='Initial Fidelity')
         for z in range(iters):
             if (z%2)!=0 or z==0 or z==(iters-1):
-                plt.plot(paramList,fidsOut[z,:],label='F out iteration {}'.format(z))
+                plt.plot(paramList,FO[z*repeats:((z+1)*repeats)],label='F out iteration {}'.format(z))
         plt.legend()
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
         plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
-        figname='../Figures/DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
+        figname='../Figures/Alt_DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
         plt.savefig(figname,dpi=300)
 
 #**************************************************************************#
 
+run_depolarized_study(2,3,'GHZ',np.arange(0,0.6,0.1),'P2',8,True,True)
 
 # run_depolarized_study(2,3,'GHZ',np.arange(0,0.6,0.01),'P1',10,True,True)
 

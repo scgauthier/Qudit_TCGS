@@ -1,6 +1,7 @@
 import os.path
 import numpy as np
 from itertools import product
+import multiprocessing
 from quditgraphstates import get_GHZ_adj
 from quditgraphstates import get_lin_adj
 
@@ -88,7 +89,6 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
                 if current_coef>0:
                     labelIn=np.array(Alabels[row]+Blabels[col])
 
-
                     #create list of effected labels
                     altered=[]
 
@@ -109,6 +109,58 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
                                 new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
 
     return new_coef_mat
+
+#***************************************************************************#
+# def coef_accounting(param_tuple):
+#     """wrapper preparing for using map (which has issues with multiple variables
+#     -> pack all vars in one tuple). x[0]<-Alabels[id_row]=Alabel, x[1]<-Blabels,x[2]<-focus,
+#     x[3]<-current_coef, x[4]<-dim,x[5]<-param,x[6]<-id_col"""
+#
+#     Alabel,Blabels,focus,new_coef_mat,current_coef,dim,param,id_col = param_tuple
+#
+#     label = np.array(Alabel+Blabels[id_col])
+#
+#     if (not compare_labels(focus,label)):
+#         incr=current_coef*(param/(dim**2 -1))
+#
+#     return
+
+#***************************************************************************#
+# def mp_qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
+#
+#     input_coef_mat=np.copy(coef_mat)
+#     new_coef_mat=(1-param)*np.copy(coef_mat)
+#
+#     for x in range(dim**2):
+#         error_label=list(product(np.arange(0,dim),repeat=2))[x]
+#
+#         Alabels=list(product(np.arange(0,dim),repeat=numA))
+#         Blabels=list(product(np.arange(0,dim),repeat=numB))
+#         for row in range(dim**numA):
+#             for col in range(dim**numB):
+#
+#                 current_coef=input_coef_mat[row,col]
+#
+#                 if current_coef>0:
+#                     labelIn=np.array(Alabels[row]+Blabels[col])
+#
+#                     #create list of effected labels
+#                     altered=[]
+#
+#                     labelOut=label_update(dim,adj_mat,target_node,labelIn,error_label)
+#
+#                     if compare_labels(labelOut,labelIn):
+#                         altered.append(labelOut)
+#                         #print('altered',altered)
+#
+#                 #determine which coefficients need to change and change them
+#                 mypool=Pool()
+#                 for entry in range(np.shape(altered)[0]):
+#                     focus=altered[entry]
+#                     for id_row in range(dim**numA):
+#                         new_coef_mat[id_row,id_col]+=mypool.map(coef_accounting,[(Alabels[id_row],Blabels,focus,current_coef,dim,param,id_col) for id_col in range(dim**numB)])
+#
+#     return new_coef_mat
 
 #***************************************************************************#
 def state_through_channel(dim,num_nodes,graph_type,param):
@@ -144,6 +196,7 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     return
 #***************************************************************************#
+save_depolarized_states(2,2,'GHZ',np.arange(0,0.6,0.1))
 # for N in range(2,12):
 #     save_depolarized_states(2,N,'GHZ',np.arange(0,0.6,0.01))
 # print(state_through_channel(2,3,'GHZ',0.05)[1,0])
