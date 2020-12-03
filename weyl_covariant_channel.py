@@ -114,14 +114,14 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
 # def coef_accounting(param_tuple):
 #     """wrapper preparing for using map (which has issues with multiple variables
 #     -> pack all vars in one tuple). x[0]<-Alabels[id_row]=Alabel, x[1]<-Blabels,x[2]<-focus,
-#     x[3]<-current_coef, x[4]<-dim,x[5]<-param,x[6]<-id_col"""
+#     x[3]<-current_coef, x[4]<-dim,x[5]<-param,x[6]<-new_coef_mat,x[7]<-id_col"""
 #
-#     Alabel,Blabels,focus,new_coef_mat,current_coef,dim,param,id_col = param_tuple
+#     Alabel,Blabels,focus,new_coef_mat,current_coef,dim,param,new_coef_mat,id_col = param_tuple
 #
 #     label = np.array(Alabel+Blabels[id_col])
 #
 #     if (not compare_labels(focus,label)):
-#         incr=current_coef*(param/(dim**2 -1))
+#         new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
 #
 #     return
 
@@ -130,6 +130,8 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
 #
 #     input_coef_mat=np.copy(coef_mat)
 #     new_coef_mat=(1-param)*np.copy(coef_mat)
+#     size=np.size(new_coef_mat)
+#     new_coef_mat=new_coef_mat.reshape((size,))
 #
 #     for x in range(dim**2):
 #         error_label=list(product(np.arange(0,dim),repeat=2))[x]
@@ -154,7 +156,10 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
 #                         #print('altered',altered)
 #
 #                 #determine which coefficients need to change and change them
-#                 mypool=Pool()
+#                 manager=multiprocessing.Manager() #create manager to handle shared objects
+#                 NCF=manager.Array('f',new_coef_mat)
+#                 mypool=Pool() #create pool of worker processes
+#
 #                 for entry in range(np.shape(altered)[0]):
 #                     focus=altered[entry]
 #                     for id_row in range(dim**numA):

@@ -262,7 +262,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
 
     manager=multiprocessing.Manager() #create manager to handle shared objects
     FO=manager.Array('f',fidsOut) #Proxy for shared array
-    FI=manager.Array('f',fidsIn)
+    FI=manager.Array('f',fidsIn) #Proxy for shared array
     mypool=multiprocessing.Pool() #Create pool of worker processes
 
     mypool.map(get_fidsOut,[(paramList,dim,num_nodes,repeats,graph_type,iters,FI,csubP,alternation,FO,x) for x in range(repeats)])
@@ -272,7 +272,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
                 if z==(iters-1):
                     qcrit=paramList[y]
             if (FO[y+(z*repeats)]>(1/dim)) and isclose(FO[(y+1)+(z*repeats)],(1/dim),abs_tol=5e-3) and z==(iters-1):
-                filename='../Limit_q/Alt_{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
                 afile=open(filename,'a')
                 afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
                 afile.close()
@@ -283,11 +283,11 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
             #     afile.close()
 
 
-    # #Keep record of qcrit
-    # filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
-    # afile=open(filename,'a')
-    # afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
-    # afile.close()
+    #Keep record of qcrit
+    filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+    afile=open(filename,'a')
+    afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
+    afile.close()
 
     #plot
     if plotting==True:
@@ -300,7 +300,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
         plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
-        figname='../Figures/Alt_DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
+        figname='../Figures/DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
         plt.savefig(figname,dpi=300)
 
 #**************************************************************************#
