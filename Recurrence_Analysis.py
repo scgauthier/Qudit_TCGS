@@ -271,7 +271,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
             if (FO[(y-1) +(z*repeats)]>FI[y-1]) and (FO[(y+1)+(z*repeats)]<FI[y+1]):
                 if z==(iters-1):
                     qcrit=paramList[y]
-            if (FO[y+(z*repeats)]>(1/dim)) and isclose(FO[(y+1)+(z*repeats)],(1/dim),abs_tol=5e-3)) and z==(iters-1):
+            if (FO[y+(z*repeats)]>(1/dim)) and isclose(FO[(y+1)+(z*repeats)],(1/dim),abs_tol=5e-3) and z==(iters-1):
                 filename='../Limit_q/Alt_{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
                 afile=open(filename,'a')
                 afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
