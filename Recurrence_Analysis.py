@@ -259,6 +259,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     repeats=np.shape(paramList)[0]
     fidsOut=np.zeros((iters*repeats,))
     fidsIn=np.zeros((iters*repeats,))
+    slopes=[None]
 
     manager=multiprocessing.Manager() #create manager to handle shared objects
     FO=manager.Array('f',fidsOut) #Proxy for shared array
@@ -271,17 +272,20 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
             if (FO[(y-1) +(z*repeats)]>FI[y-1]) and (FO[(y+1)+(z*repeats)]<FI[y+1]):
                 if z==(iters-1):
                     qcrit=paramList[y]
-            if (FO[y+(z*repeats)]>(1/dim)) and isclose(FO[(y+1)+(z*repeats)],(1/dim),abs_tol=5e-3) and z==(iters-1):
-                filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
-                afile=open(filename,'a')
-                afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
-                afile.close()
-            # elif (isclose(FO[y+(z*repeats)],(1/dim),abs_tol=2e-3) and not isclose(FO[(y-1)+(z*repeats)],(1/dim),abs_tol=4e-3)) and z==(iters-1):
-            #     filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
-            #     afile=open(filename,'a')
-            #     afile.write('Nodes {}, iteration {}, qlim : {}\n'.format(num_nodes,z,paramList[y]))
-            #     afile.close()
+            slopes.append((FO[y + (z*repeats)]-FO[(y-1) + (z*repeats)])/(paramList[y]-paramList[y-1]))
+        slopes.append((FO[repeats-1+(z*repeats)]-FO[(repeats-2+(z*repeats))])/(paramList[repeats-1]-paramList[repeats-2]))
+        slopes.append(None)
 
+    #Keep record critical slopes
+    filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+    for z in range(iters):
+        for y in range(1,repeats):
+            if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
+                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]):
+                    q_val=paramList[y]
+                    afile=open(filename,'a')
+                    afile.write('Nodes {}, iteration {}, critical point at q value: {}\n'.format(num_nodes,z,q_val))
+                    afile.close()
 
     #Keep record of qcrit
     filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
@@ -303,7 +307,18 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         figname='../Figures/DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
         plt.savefig(figname,dpi=300)
 
-#**************************************************************************#
+        plt.figure()
+        for z in range(iters):
+            if (z%2)!=0 or z==0 or z==(iters-1):
+                plt.plot(paramList,slopes[(z*repeats):((z+1)*repeats)],label='Iteration {}'.format(z))
+        plt.legend()
+        plt.xlabel('Depolarization channel parameter q', fontsize=18)
+        plt.ylabel('Instantaneous rate of change of fidelity')
+        plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
+        figname='../Figures/Slopes_DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
+        plt.savefig(figname,dpi=300)
 
+
+#**************************************************************************#
 
 print("--- %s seconds ---" % (time.time()-start_time))
