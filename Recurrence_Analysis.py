@@ -281,10 +281,10 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     for z in range(iters):
         for y in range(1,repeats):
             if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
-                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]):
+                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
                     q_val=paramList[y]
                     afile=open(filename,'a')
-                    afile.write('Nodes {}, iteration {}, critical point at q value: {}\n'.format(num_nodes,z,q_val))
+                    afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
                     afile.close()
 
     #Keep record of qcrit
@@ -320,5 +320,5 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
 
 
 #**************************************************************************#
-
+run_depolarized_study(2,5,'line',np.arange(0,1,0.002), 'P1',12, True, True)
 print("--- %s seconds ---" % (time.time()-start_time))
