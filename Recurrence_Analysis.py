@@ -277,21 +277,22 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         slopes.append(None)
 
     #Keep record critical slopes
-    filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+    # filename='../Limit_q/{}_{}_{}_qlim.txt'.format(dim,graph_type,subP)
+    filename='../Limit_q/temp_qlim.txt'.format(dim,graph_type,subP)
     for z in range(iters):
         for y in range(1,repeats):
             if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
                 if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
                     q_val=paramList[y]
                     afile=open(filename,'a')
-                    afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
+                    afile.write('Nodes {}, iteration {}, slope: {}, Fidelity: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)], FO[y+(z*repeats)],q_val))
                     afile.close()
 
-    #Keep record of qcrit
-    filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
-    afile=open(filename,'a')
-    afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
-    afile.close()
+    # #Keep record of qcrit
+    # filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+    # afile=open(filename,'a')
+    # afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
+    # afile.close()
 
     #plot
     if plotting==True:
