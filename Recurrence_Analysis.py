@@ -320,5 +320,4 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
 
 
 #**************************************************************************#
-run_depolarized_study(2,5,'line',np.arange(0,1,0.002), 'P1',12, True, True)
 print("--- %s seconds ---" % (time.time()-start_time))
