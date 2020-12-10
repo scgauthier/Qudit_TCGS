@@ -23,6 +23,8 @@ from weyl_covariant_channel import assign_nodes, state_through_channel
 start_time=time.time()
 
 #**************************************************************************#
+#Calculates and saves to a file the coefficients of the werner type states
+#**************************************************************************#
 def save_oneParam_coefficients(num_nodes,dim,graph_type,param):
     numA,numB=assign_nodes(num_nodes,graph_type)
 
@@ -44,6 +46,9 @@ def save_oneParam_coefficients(num_nodes,dim,graph_type,param):
 
         afile.close()
     return
+#**************************************************************************#
+#For a given graph, loads from file of generates the input coefficient
+#matrix in the graph state basis
 #**************************************************************************#
 def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
 
@@ -81,10 +86,13 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
     return coef_mat
 
 #**************************************************************************#
+#Runs sub-protocol P1 on a given input state, specified by cmat_in and the
+#type params dim, num_nodes, graph_type
+#**************************************************************************#
 def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     dim_list=list(range(0,dim))
 
-    numA,numB=assign_nodes(num_nodes,graph_type)
+    numA,numB=assign_nodes(num_nodes,graph_type) #determines node bi-partition
 
     normK=0
     for x in range(0,dim**numA):
@@ -117,6 +125,8 @@ def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
 
     return normK,coef_mat
 
+#**************************************************************************#
+#Runs subprotocol P2 on a given input state
 #**************************************************************************#
 def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     dim_list=list(range(0,dim))
@@ -155,6 +165,8 @@ def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     return normK,coef_mat
 
 #**************************************************************************#
+#Wrapper to handle plotting in run_purification if doplot is true
+#**************************************************************************#
 def single_plot(fids,psuccs,pcum_list,subP):
     xdat=range(0,np.size(fids))
 
@@ -170,6 +182,8 @@ def single_plot(fids,psuccs,pcum_list,subP):
     ax2.legend()
     plt.show()
 
+#**************************************************************************#
+#Handles purification mostly for Werner type states
 #**************************************************************************#
 def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,alternation,doplot):
     csubP=subP
@@ -202,6 +216,9 @@ def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,altern
 
     return fids
 
+#**************************************************************************#
+#Calls to run purification and plot for many dimensions, mostly for Werner
+#input states
 #**************************************************************************#
 def manyD_plot(num_nodes,dimlist,graph_type,input_type,param,iters,subP,alternation):
 
@@ -284,7 +301,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
                 if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
                     q_val=paramList[y]
                     afile=open(filename,'a')
-                    afile.write('Nodes {}, iteration {}, slope: {}, Fidelity: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)], FO[y+(z*repeats)],q_val))
+                    afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
                     afile.close()
 
     #Keep record of qcrit
