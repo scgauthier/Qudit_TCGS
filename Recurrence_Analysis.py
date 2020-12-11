@@ -6,7 +6,8 @@ import numpy as np
 from math import isclose
 from itertools import product
 from operator import add
-from weyl_covariant_channel import assign_nodes, state_through_channel
+from utils import assign_nodes
+from weyl_covariant_channel import state_through_channel
 
 #********VARIABLES********************************************************#
 #num_nodes: number of nodes in graph

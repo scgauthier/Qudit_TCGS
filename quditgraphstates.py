@@ -3,6 +3,7 @@ import time
 from math import sqrt,pi
 from cmath import exp
 from itertools import product
+from utils import get_GHZ_adj, get_lin_adj
 
 # start_time=time.time()
 #Specify graph -- specify adjacency matrix of size n x n.
@@ -359,39 +360,6 @@ def prepare_graph(dim,adjMat):
 		if abs(graph_state[entry].imag) < 1e-10:
 			graph_state[entry]=complex(graph_state[entry].real,0)
 	return graph_state
-
-#define the adjacency matrix of an N=num_nodes GHZ state
-def get_GHZ_adj(num_nodes):
-	adj_mat=np.zeros((num_nodes,num_nodes))
-	for x in range(1,num_nodes):
-		#ones in first row
-		adj_mat[0,x]=1
-		#ones in first column
-		adj_mat[x,0]=1
-	return adj_mat
-
-def get_lin_adj(num_nodes):
-	if (num_nodes % 2)!=0:
-		numA=(num_nodes+1)/2
-	else:
-		numA=num_nodes/2
-	numA=int(numA)
-
-	adj_mat=np.zeros((num_nodes,num_nodes))
-	for x in range(0,numA):
-		if x==0:
-			adj_mat[x,numA]=1
-			adj_mat[numA,x]=1
-		elif x==(numA-1):
-			adj_mat[x,numA+x-1]=1
-			adj_mat[numA+x-1,x]=1
-		else:
-			adj_mat[x,numA+x-1]=1
-			adj_mat[x,numA+x]=1
-			adj_mat[numA+x-1,x]=1
-			adj_mat[numA+x,x]=1
-
-	return adj_mat
 
 
 #Have function set the graph state construction as index vec[0]
