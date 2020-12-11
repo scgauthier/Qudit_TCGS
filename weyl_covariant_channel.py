@@ -2,8 +2,8 @@ import os.path
 import numpy as np
 from itertools import product
 import multiprocessing
-from utils import compare_labels,label_update,assign_nodes,perfect_coef_mat,get_lin_adj,get_GHZ_adj
-
+from utils import compare_labels,label_update,assign_nodes,perfect_coef_mat
+from utils import match_label_to_index, get_lin_adj,get_GHZ_adj
 #********Weyl Channel Coefficients****************************************#
 #we have made the parameter choice a_00=(1-q),
 #a_uv=q/(dim^2 -1) forall u,v in (F_d)^2
