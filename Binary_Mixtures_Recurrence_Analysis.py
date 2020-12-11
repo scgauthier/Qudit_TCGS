@@ -83,8 +83,29 @@ def plot_one_param_fam_entdiff_vs_entin(subset_node_num,dimList):
     plt.ylabel('Difference between Initial and Final Von Neuman Entropy')
     plt.show()
 
+def plot_one_param_fam_entratio_vs_entin(subset_node_num,dimList):
+    for y in range(0,np.size(dimList)):
+        dim=dimList[y]
+        entRat=[]
+        entsIn=[]
+        min_fid=1/(dim**subset_node_num)
+        fidList=np.arange(min_fid+0.001,1,0.01)
+        for x in range(0,np.size(fidList)):
+            fid=fidList[x]
+            entIn=one_param_fam_Von_Neuman_Ent(fid,dim,subset_node_num)
+            entsIn.append(entIn)
+            fidOut=one_parameter_family(fid,dim,subset_node_num)
+            entOut=one_param_fam_Von_Neuman_Ent(fidOut,dim,subset_node_num)
+            entRat.append(entIn/entOut)
+        plt.plot(entsIn,entRat,label="d = %s " % (dim))
+    plt.legend()
+    plt.xlabel('Initial Von Neuman Entropy')
+    plt.ylabel('Ratio between Initial and Final Von Neuman Entropy')
+    plt.ylim((0,100))
+    plt.show()
+
 
 # plot_one_param_fam_entin_vs_fid(1,[2,3,5,7,11,13])
-plot_one_param_fam_entdiff_vs_entin(1,[2,3,5,7,9,11,13])
+plot_one_param_fam_entratio_vs_entin(1,[2,3,5,7,9,11,13])
 
 #plot_one_param_fam_psucc_vs_fin(5,[2,3,5,7,11,13],np.arange(0.501,1,0.01))

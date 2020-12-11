@@ -2,8 +2,7 @@ import os.path
 import numpy as np
 from itertools import product
 import multiprocessing
-from quditgraphstates import get_GHZ_adj
-from quditgraphstates import get_lin_adj
+from utils import compare_labels,label_update,assign_nodes,perfect_coef_mat,get_lin_adj,get_GHZ_adj
 
 #********Weyl Channel Coefficients****************************************#
 #we have made the parameter choice a_00=(1-q),
@@ -20,56 +19,6 @@ from quditgraphstates import get_lin_adj
 #param: transmission parameter of the channel
 #kLab (unLab): an (un)known graph state basis labels
 
-#**************************************************************************#
-def assign_nodes(num_nodes,graph_type):
-    if graph_type == 'GHZ':
-        numA=1
-        numB=num_nodes-1
-    elif graph_type =='line':
-        if (num_nodes % 2)==0:
-            numA=int(num_nodes/2)
-            numB=int(num_nodes/2)
-        else:
-            numA=int((num_nodes+1)/2)
-            numB=int((num_nodes-1)/2)
-    elif graph_type =='cluster':
-        numA=int(num_nodes/2)
-        numB=int(num_nodes/2)
-    return numA,numB
-#**************************************************************************#
-def perfect_coef_mat(dim,numA,numB):
-    coef_mat=np.zeros((dim**numA,dim**numB))
-    coef_mat[0,0]=1
-    return coef_mat
-    
-#**************************************************************************#
-#Compares the labels of graph basis states to determine if they match
-#returns True if they differ, False if the same
-def compare_labels(unLab,kLab):
-    for x in range(np.shape(kLab)[0]):
-        if unLab[x]!=kLab[x]:
-            return True
-        elif x==(np.shape(kLab)[0]-1) and unLab[x]==kLab[x]:
-            return False
-#**************************************************************************#
-#updates the graph state basis label associated after doing
-#the specified combination of X and Z errors on the target_qudit
-def label_update(dim,adj_mat,target_node,labelIn,error_label):
-
-    label=np.copy(labelIn)
-    #establish graph size
-    num_nodes=np.shape(adj_mat)[0]
-    #define blank error
-    error=np.zeros(num_nodes)
-
-    #add in z part of error
-    label[target_node-1]=error_label[1]
-
-    #add in x part of error
-    for x in range(num_nodes):
-        label[x]=((dim-1)*error_label[0]*adj_mat[target_node-1,x]+label[x])% dim
-
-    return label
 
 #***************************************************************************#
 def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
@@ -101,13 +50,12 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
 
                 #determine which coefficients need to change and change them
                 for entry in range(np.shape(altered)[0]):
+                    #graphs state basis label of coefficient to be updated
                     focus=altered[entry]
-                    for id_row in range(dim**numA):
-                        for id_col in range(dim**numB):
-                            label=np.array(Alabels[id_row]+Blabels[id_col])
-
-                            if (not compare_labels(focus,label)):
-                                new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+                    #get matrix indices of label
+                    id_row,id_col=match_label_to_index(dim,numA,numB,focus)
+                    #update coeficient matrix
+                    new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
 
     return new_coef_mat
 
@@ -146,6 +94,3 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
     return
 
 #***************************************************************************#
-# for N in range(2,12):
-#     save_depolarized_states(2,N,'GHZ',np.arange(0,0.6,0.01))
-# print(state_through_channel(2,3,'GHZ',0.05)[1,0])
