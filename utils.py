@@ -2,8 +2,6 @@ import time
 import os.path
 import numpy as np
 from itertools import product
-from weyl_covariant_channel import compare_labels, label_update, assign_nodes, perfect_coef_mat
-from quditgraphstates import get_GHZ_adj
 
 #***************************************************************************#
 #Helper function to match a state label to a matrix index
