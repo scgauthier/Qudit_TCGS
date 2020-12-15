@@ -141,12 +141,12 @@ def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
                 normK+=cmat_in[y,x]*cmat_in[z,x]+cmat_in[z,x]*cmat_in[y,x]
             normK+=(cmat_in[y,x])**2
 
-    indices=list(product(dim_list,repeat=numA))
-    coef_mat=np.zeros((dim**numA,dim**numB))
-    for control in range(0,dim**numA):
-        indexControl=np.array(indices[control])
+    indices=list(product(dim_list,repeat=numA)) #all labels
+    coef_mat=np.zeros((dim**numA,dim**numB)) #blank coef matrix
+    for control in range(0,dim**numA): #row number
+        indexControl=np.array(indices[control]) #current state label
         # good_entries=[]
-        for y in range(0,dim**numA):
+        for y in range(0,dim**numA): 
             indexA1=np.array(indices[y])
 
             for z in range(0,y+1):

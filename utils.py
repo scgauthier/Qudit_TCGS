@@ -109,3 +109,23 @@ def get_lin_adj(num_nodes):
 			adj_mat[numA+x,x]=1
 
 	return adj_mat
+
+#**************************************************************************#
+def getbasis(dim):
+	Basis=[]
+	#define basis vectors
+	for val in range(0,dim):
+		basisvec=np.zeros((dim,1))
+		basisvec[(val,0)]=1
+		Basis.append(basisvec)
+	return Basis
+
+#**************************************************************************#
+def getbasisR(dim):
+	Basis=[]
+	#define basis vectors
+	for val in range(0,dim):
+		basisvec=np.zeros((dim,))
+		basisvec[val]=1
+		Basis.append(basisvec)
+	return Basis

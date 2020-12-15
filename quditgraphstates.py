@@ -3,7 +3,7 @@ import time
 from math import sqrt,pi
 from cmath import exp
 from itertools import product
-from utils import get_GHZ_adj, get_lin_adj
+from utils import get_GHZ_adj, get_lin_adj, getbasis
 
 # start_time=time.time()
 #Specify graph -- specify adjacency matrix of size n x n.
@@ -13,15 +13,6 @@ def specify_graph(sz):
 	adjMat = [[int(input()) for x in range (sz)] for y in range (sz)]
 
 	return adjMat
-
-def getbasis(dim):
-	Basis=[]
-	#define basis vectors
-	for val in range(0,dim):
-		basisvec=np.zeros((dim,1))
-		basisvec[(val,0)]=1
-		Basis.append(basisvec)
-	return Basis
 
 
 #define a phase matrix for dimension d, raised to power pow
