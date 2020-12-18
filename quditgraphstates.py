@@ -430,7 +430,8 @@ def update_label(dim,adjMat,label,operation):
 
 #Square_cluster_ten=np.array([[0, 1, 0, 0, 0, 1, 0, 0, 0,0],[1,0,1,0,0,0,1,0,0,0],[0,1,0,1,0,0,0,1,0,0],[0,0,1,0,1,0,0,0,1,0],[0,0,0,1,0,0,0,0,0,1],[1,0,0,0,0,0,1,0,0,0],[0,1,0,0,0,1,0,1,0,0],[0,0,1,0,0,0,1,0,1,0],[0,0,0,1,0,0,0,1,0,1],[0,0,0,0,1,0,0,0,1,0]])
 #print(list(product([0,1,2],repeat=2)))
-# graph_state=prepare_graph(3,get_GHZ_adj(5))
+graph_state=prepare_graph(2,get_GHZ_adj(3))
+input=np.kron(graph_state,graph_state)
 # update=XZvw(3,[0,0,0,0,2],[0,0,0,0,1]).dot(graph_state)
 # print(decide_index(3,get_GHZ_adj(5),update))
 #graph_state=prepare_graph(3,get_lin_adj(5))
@@ -446,9 +447,9 @@ def update_label(dim,adjMat,label,operation):
 
 
 #print(gate.dot(np.kron(Basis[2],Basis[0])))
-#update=MPG(5,3,0,2).dot(input)
-#update=MPG(5,3,1,2).dot(update)
-#update=MPG(5,3,2,2).dot(update)
+update=MPG(3,2,0,2).dot(input)
+update=Alt_MPG(3,2,1,1).dot(update)
+print(update)
 #update=Alt_MPG(3,3,2,2).dot(update)
 #print(decide_double_index(3,get_GHZ_adj(3),update))
 #print(update-input)

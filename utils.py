@@ -18,10 +18,37 @@ def match_label_to_index(dim,numA,numB,label):
     for x in range(np.size(labA)):
         trkA+=labA[x]*(dim**x)
 
+    #Get B index
     for x in range(np.size(labB)):
         trkB+=labB[x]*(dim**x)
 
     return trkA,trkB
+
+#***************************************************************************#
+#Helper function to match A part of label to a matrix index
+#***************************************************************************#
+def match_labA_to_indA(dim,numA,labA):
+    labA=np.flip(labA)
+
+    trkA=0
+
+    for x in range(np.size(labA)):
+        trkA+=labA[x]*(dim**x)
+
+    return trkA
+
+#***************************************************************************#
+#Helper function to match B part of label to a matrix index
+#***************************************************************************#
+def match_labB_to_indB(dim,numA,labB):
+    labB=np.flip(labB)
+
+    trkB=0
+
+    for x in range(np.size(labB)):
+        trkB+=labB[x]*(dim**x)
+
+    return trkB
 
 #**************************************************************************#
 #Compares the labels of graph basis states to determine if they match
@@ -129,3 +156,30 @@ def getbasisR(dim):
 		basisvec[val]=1
 		Basis.append(basisvec)
 	return Basis
+
+#**************************************************************************#
+#Helper function for getting indices corresponding to state1 label and state
+#two label from single kron product state
+#**************************************************************************#
+def get_two_state_indices(dim,numA,numB,row,col):
+    indA1,indA2=divmod(row,dim**numA)
+    indB1,indB2=divmod(col,dim**numB)
+
+    return indA1,indA2,indB1,indB2
+
+#**************************************************************************#
+#Helper function for combining two sets of partial indices to the full index
+#of the kronecker product state
+#**************************************************************************#
+def index_convert(dim,numA,numB,ind1A,ind1B,ind2A,ind2B):
+    row=int((ind1A*(dim**numA))+ind2A)
+    col=int((ind1B*(dim**numB))+ind2B)
+    return row,col
+
+# X=np.array([[0,1],[1,0]])
+# Z=np.array([[1,0],[0,-1]])
+#
+# row,col=index_convert(2,1,1,1,1,1,0)
+# print('row: ', row, 'col: ', col)
+# indA1,indA2,indB1,indB2=get_two_state_indices(3,1,1,2,2)
+# print('indA1 :', indA1, 'indA2: ', indA2, 'indB1: ', indB1, 'indB2: ', indB2)

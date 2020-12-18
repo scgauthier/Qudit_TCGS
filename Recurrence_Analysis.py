@@ -146,7 +146,7 @@ def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
     for control in range(0,dim**numA): #row number
         indexControl=np.array(indices[control]) #current state label
         # good_entries=[]
-        for y in range(0,dim**numA): 
+        for y in range(0,dim**numA):
             indexA1=np.array(indices[y])
 
             for z in range(0,y+1):
@@ -299,7 +299,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     for z in range(iters):
         for y in range(1,repeats):
             if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
-                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
+                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1 and z>(iters/2):
                     q_val=paramList[y]
                     afile=open(filename,'a')
                     afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
