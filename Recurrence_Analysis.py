@@ -335,7 +335,8 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.title('{}, dim={}, N={}, Initial {}'.format(graph_type,dim,num_nodes,subP))
         figname='../Figures/Slopes_DP_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
         plt.savefig(figname,dpi=300)
+        plt.close()
 
 
 #**************************************************************************#
-print("--- %s seconds ---" % (time.time()-start_time))
+# print("--- %s seconds ---" % (time.time()-start_time))
