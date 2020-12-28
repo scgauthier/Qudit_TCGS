@@ -311,6 +311,9 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
     afile.close()
 
+    #deactivate plotting for larger states--for memory
+    if num_nodes>5:
+        plotting=False
     #plot
     if plotting==True:
         plt.figure()
