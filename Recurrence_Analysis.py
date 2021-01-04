@@ -307,12 +307,14 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
                     afile=open(filename,'a')
                     afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
                     afile.close()
-
-    #Keep record of qcrit
-    filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
-    afile=open(filename,'a')
-    afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
-    afile.close()
+    try: qcrit
+    except NameError: qcrit=None
+    if qcrit!=None:
+        #Keep record of qcrit
+        filename='../Critical_q/{}_{}_{}_qcrit.txt'.format(dim,graph_type,subP)
+        afile=open(filename,'a')
+        afile.write('Nodes {}, qcrit : {}\n'.format(num_nodes,qcrit))
+        afile.close()
 
     #deactivate plotting for larger states--for memory
     if num_nodes>5:
