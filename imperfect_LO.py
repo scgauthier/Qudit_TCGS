@@ -35,10 +35,10 @@ def raiseA(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 
     for n in range(dim):
          outLabB1 = (labB1 + n*(dim-1)*cutAdjRow) % dim
-         indB1=match_labB_to_indB(dim,numB,outLabB1)
+         indB1=match_labB_to_indB(dim,outLabB1)
          for m in range(0,dim):
              outLabA2 = (labA2 + m*cutBasisVec) % dim
-             indA2=match_labA_to_indA(dim,numA,outLabA2)
+             indA2=match_labA_to_indA(dim,outLabA2)
              cf=(1/dim)*exp((2*pi*complex(0,1)/dim)*((n*(dim-1)*labA1[target_node-1] + (dim-m*n)) % dim))
 
              new_row,new_col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
@@ -61,10 +61,10 @@ def lowerA(dim,numA,numB,labA1,labA2,labB2,indB1,indA2,target_node,adj_mat,new_c
 
     for n in range(dim):
         outLabB2 = (labB2 + n*cutAdjRow) % dim
-        indB2=match_labB_to_indB(dim,numB,outLabB2)
+        indB2=match_labB_to_indB(dim,outLabB2)
         for m in range(0,dim):
             outLabA1 = (labA1 + m*cutBasisVec) % dim
-            indA1=match_labA_to_indA(dim,numA,outLabA1)
+            indA1=match_labA_to_indA(dim,outLabA1)
             cf=(1/dim)*exp((2*pi*complex(0,1)/dim)*((n*labA2[target_node-1] + (dim-m*n)) % dim))
 
             new_row,new_col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
@@ -87,10 +87,10 @@ def lowerB(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 
     for n in range(0,dim):
         outLabA2 = (labA2 + n*cutAdjRow) % dim
-        indA2=match_labA_to_indA(dim,numA,outLabA2)
+        indA2=match_labA_to_indA(dim,outLabA2)
         for m in range(0,dim):
             outLabB1=(labB1 + m*cutBasisVec) % dim
-            indB1=match_labB_to_indB(dim,numB,outLabB1)
+            indB1=match_labB_to_indB(dim,outLabB1)
             cf=(1/dim)*exp((2*pi*complex(0,1)/dim)*((n*labB2[target_node-1-numA] + (dim-m*n)) % dim ))
 
             new_row,new_col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
@@ -113,10 +113,10 @@ def raiseB(dim,numA,numB,labA1,labB1,labB2,indB1,indA2,target_node,adj_mat,new_c
 
     for n in range(0,dim):
         outLabA1 = (labA1 + n*(dim-1)*cutAdjRow) % dim
-        indA1=match_labA_to_indA(dim,numA,outLabA1)
+        indA1=match_labA_to_indA(dim,outLabA1)
         for m in range(0,dim):
             outLabB2 = (labB2 + m*cutBasisVec) % dim
-            indB2=match_labB_to_indB(dim,numB,outLabB2)
+            indB2=match_labB_to_indB(dim,outLabB2)
             cf=(1/dim)*exp((2*pi*complex(0,1)/dim)*((n*(dim-1)*labB1[target_node-1-numA] + (dim-m*n)) % dim))
 
             new_row,new_col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)

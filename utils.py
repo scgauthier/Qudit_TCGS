@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product
 
 #***************************************************************************#
-#Helper function to match a state label to a matrix index
+#Helper function to match a state label to a matrix index (row,col)
 #***************************************************************************#
 def match_label_to_index(dim,numA,numB,label):
 
@@ -27,7 +27,7 @@ def match_label_to_index(dim,numA,numB,label):
 #***************************************************************************#
 #Helper function to match A part of label to a matrix index
 #***************************************************************************#
-def match_labA_to_indA(dim,numA,labA):
+def match_labA_to_indA(dim,labA):
     labA=np.flip(labA)
 
     trkA=0
@@ -40,7 +40,7 @@ def match_labA_to_indA(dim,numA,labA):
 #***************************************************************************#
 #Helper function to match B part of label to a matrix index
 #***************************************************************************#
-def match_labB_to_indB(dim,numA,labB):
+def match_labB_to_indB(dim,labB):
     labB=np.flip(labB)
 
     trkB=0

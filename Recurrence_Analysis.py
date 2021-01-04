@@ -6,7 +6,7 @@ import numpy as np
 from math import isclose
 from itertools import product
 from operator import add
-from utils import assign_nodes
+from utils import assign_nodes, match_labB_to_indB, match_labA_to_indA
 from weyl_covariant_channel import state_through_channel
 
 #********VARIABLES********************************************************#
@@ -47,6 +47,21 @@ def save_oneParam_coefficients(num_nodes,dim,graph_type,param):
 
         afile.close()
     return
+
+#**************************************************************************#
+#For one parameter family analysis, determine minimum purification fidelity
+#for a given graph type and state dimension
+#**************************************************************************#
+def oneParam_min_fidelity(dim,num_nodes,graph_type,subP):
+    numA,numB=assign_nodes(num_nodes,graph_type)
+
+    if subP=='P1':
+        critX=(dim**num_nodes - 2*dim**numA + 1)/(1-dim**num_nodes - dim**numA + dim**(num_nodes+numA))
+    elif subP=='P2':
+        critX=(dim**num_nodes - 2*dim**numB + 1)/(1-dim**num_nodes - dim**numB + dim**(num_nodes+numB))
+
+    return critX
+
 #**************************************************************************#
 #For a given graph, loads from file of generates the input coefficient
 #matrix in the graph state basis
@@ -85,13 +100,12 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
             coef_mat=state_through_channel(dim,num_nodes,graph_type,param)
 
     return coef_mat
-
 #**************************************************************************#
 #Runs sub-protocol P1 on a given input state, specified by cmat_in and the
 #type params dim, num_nodes, graph_type
 #**************************************************************************#
 def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
-    dim_list=list(range(0,dim))
+    dim_list=list(range(dim))
 
     numA,numB=assign_nodes(num_nodes,graph_type) #determines node bi-partition
 
@@ -102,27 +116,21 @@ def P1_update_coefficients(num_nodes,dim,graph_type,cmat_in):
                 normK+=cmat_in[x,y]*cmat_in[x,z]+cmat_in[x,z]*cmat_in[x,y]
             normK+=(cmat_in[x,y])**2
 
+
+    #Application of measurement condition
     indices=list(product(dim_list,repeat=numB))
     coef_mat=np.zeros((dim**numA,dim**numB))
-    for control in range(0,dim**numB):
-        indexControl=np.array(indices[control])
-        # good_entries=[]
-        for y in range(0,dim**numB):
-            indexB1=np.array(indices[y])
+    for x in range(dim**numA):
+        for y in range(dim**numB):
+            controlB=np.array(indices[y])
 
-            for z in range(0,y+1):
-                indexB2=np.array(indices[z])
-
-                for entry in range(0,numB):
-                    if ((indexB1+indexB2+(dim-1)*indexControl) % dim)[numB-1-entry]!=0:
-                        break
-                    elif entry==numB-1 and y!=z:
-                        for x in range(0,dim**numA):
-                            coef_mat[x,control]+=(cmat_in[x,y]*cmat_in[x,z]+cmat_in[x,z]*cmat_in[x,y])/normK
-                    elif entry==numB-1 and y==z:
-                        for x in range(0,dim**numA):
-                            coef_mat[x,control]+=((cmat_in[x,y])**2)/normK
-
+            for col_muB in range(dim**numB):
+                muB=np.array(indices[col_muB])
+                nuB=np.add((dim-1)*muB,controlB) % dim
+                #get col corresponding to nuB
+                col_nuB=match_labB_to_indB(dim,nuB)
+                #add to coefficient
+                coef_mat[x,y]+=(cmat_in[x,col_muB]*cmat_in[x,col_nuB])/(normK)
 
     return normK,coef_mat
 
@@ -143,25 +151,17 @@ def P2_update_coefficients(num_nodes,dim,graph_type,cmat_in):
 
     indices=list(product(dim_list,repeat=numA)) #all labels
     coef_mat=np.zeros((dim**numA,dim**numB)) #blank coef matrix
-    for control in range(0,dim**numA): #row number
-        indexControl=np.array(indices[control]) #current state label
-        # good_entries=[]
-        for y in range(0,dim**numA):
-            indexA1=np.array(indices[y])
+    for x in range(dim**numA):
+        controlA=np.array(indices[x])
+        for y in range(dim**numB):
 
-            for z in range(0,y+1):
-                indexA2=np.array(indices[z])
-
-                for entry in range(0,numA):
-                    if ((indexA1+indexA2+(dim-1)*indexControl) % dim)[numA-1-entry]!=0:
-                        break
-                    elif entry==numA-1 and y!=z:
-                        for x in range(0,dim**numB):
-                            coef_mat[control,x]+=(cmat_in[y,x]*cmat_in[z,x]+cmat_in[z,x]*cmat_in[y,x])/normK
-                    elif entry==numA-1 and y==z:
-                        for x in range(0,dim**numB):
-                            coef_mat[control,x]+=((cmat_in[y,x])**2)/normK
-
+            for row_muA in range(dim**numA):
+                muA=np.array(indices[row_muA])
+                nuA=np.add((dim-1)*muA,controlA) % dim
+                #get row corresponding to nuA
+                row_nuA=match_labA_to_indA(dim,nuA)
+                #add to coefficient
+                coef_mat[x,y]+=(cmat_in[row_muA,y]*cmat_in[row_nuA,y])/(normK)
 
     return normK,coef_mat
 
@@ -279,12 +279,15 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     fidsIn=np.zeros((iters*repeats,))
     slopes=[None]
 
+    #set up multiprocessing
     manager=multiprocessing.Manager() #create manager to handle shared objects
     FO=manager.Array('f',fidsOut) #Proxy for shared array
     FI=manager.Array('f',fidsIn) #Proxy for shared array
     mypool=multiprocessing.Pool() #Create pool of worker processes
 
+    #update fidelities
     mypool.map(get_fidsOut,[(paramList,dim,num_nodes,repeats,graph_type,iters,FI,csubP,alternation,FO,x) for x in range(repeats)])
+    #find critical points from each round of purification and calculate slopes
     for z in range(iters):
         for y in range(1,repeats-1):
             if (FO[(y-1) +(z*repeats)]>FI[y-1]) and (FO[(y+1)+(z*repeats)]<FI[y+1]):
