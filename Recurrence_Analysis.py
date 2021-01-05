@@ -177,10 +177,13 @@ def single_plot(fids,psuccs,pcum_list,subP):
     ax1.plot(xdat,fids,'blue')
     ax2.plot(xdat,pcum_list,'co',label='Cumulative Probability')
     ax2.plot(xdat,psuccs,'ro',label='Stage probability')
-    ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP))
-    ax1.set_ylabel('Fidelity',color='blue')
-    ax2.set_ylabel('Probaility of success')
-    ax2.legend()
+    ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
+    ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
+    ax2.set_ylabel('Probaility of success',fontsize=18)
+    ax2.legend(fontsize=14)
+    ax1.tick_params(axis="x", labelsize=18)
+    ax1.tick_params(axis="y", labelsize=18)
+    ax2.tick_params(axis="y", labelsize=18) 
     plt.show()
 
 #**************************************************************************#

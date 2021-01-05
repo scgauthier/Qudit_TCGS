@@ -26,11 +26,12 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,coef_mat,param):
     input_coef_mat=np.copy(coef_mat)
     new_coef_mat=(1-param)*np.copy(coef_mat)
 
+    Alabels=list(product(np.arange(0,dim),repeat=numA))
+    Blabels=list(product(np.arange(0,dim),repeat=numB))
+
     for x in range(dim**2):
         error_label=list(product(np.arange(0,dim),repeat=2))[x]
 
-        Alabels=list(product(np.arange(0,dim),repeat=numA))
-        Blabels=list(product(np.arange(0,dim),repeat=numB))
         for row in range(dim**numA):
             for col in range(dim**numB):
 

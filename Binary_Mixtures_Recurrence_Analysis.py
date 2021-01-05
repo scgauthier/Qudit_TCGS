@@ -104,14 +104,15 @@ def plot_one_param_fam_entratio_vs_entin(subset_node_num,dimList):
             entsIn.append(entIn)
             fidOut=one_parameter_family(fid,dim,subset_node_num)
             entOut=one_param_fam_Von_Neuman_Ent(fidOut,dim,subset_node_num)
-            entRat.append(log(entIn/entOut))
+            entRat.append(entIn/entOut)
         plt.plot(entsIn,entRat,'-',label="d = %s " % (dim))
     plt.legend(loc='upper right',fontsize=14)
+    plt.yscale('log')
     plt.xlabel('Initial Von Neumann Entropy',fontsize=20)
-    plt.ylabel('Log of Ratio of Initial to Final Entropy',fontsize=20)
+    plt.ylabel('Ratio of Initial to Final Entropy',fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
-    plt.ylim((0,15))
+    plt.ylim((1,10e6))
     plt.show()
 
 

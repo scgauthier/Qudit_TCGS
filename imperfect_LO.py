@@ -6,7 +6,8 @@ from cmath import exp
 from math import pi
 from utils import getbasisR,get_GHZ_adj,get_lin_adj,assign_nodes,index_convert
 from utils import match_labA_to_indA,match_labB_to_indB,get_two_state_indices
-from weyl_covariant_channel import qudit_through_channel
+from utils import compare_labels,label_update,match_label_to_index
+# from weyl_covariant_channel import qudit_through_channel
 
 #********VARIABLES********************************************************#
 #dim: dimension of state_shape
@@ -18,6 +19,8 @@ from weyl_covariant_channel import qudit_through_channel
 #target_node: qudit on which gate should act
 #coef_mat: stores all the information about the current density matrix
 #set: options--sA or sB--describes whether gate acts on subset of nodes A or B
+#state_copy: options--first or second--describes whether depolarizing channel acts
+#           on qudit from first or second state copy
 #**************************************************************************#
 
 #**************************************************************************#
@@ -125,7 +128,7 @@ def raiseB(dim,numA,numB,labA1,labB1,labB2,indB1,indA2,target_node,adj_mat,new_c
     return new_coef_mat
 
 #**************************************************************************#
-#defines a noisy controlled two qudit operation, which can either be a raising
+#defines a controlled two qudit operation, which can either be a raising
 #operation or a lowering operation
 #**************************************************************************#
 def perfect_CG(dim,num_nodes,graph_type,operation,target_node,coef_mat,set):
@@ -179,6 +182,75 @@ def perfect_CG(dim,num_nodes,graph_type,operation,target_node,coef_mat,set):
 
     return cm
 
+
+#***************************************************************************#
+def qudit_through_channel(dim,numA,numB,adj_mat,target_node,state_copy,coef_mat,param):
+
+    input_coef_mat=np.copy(coef_mat)
+    new_coef_mat=(1-param)*np.copy(coef_mat)
+
+    Alabels=list(product(np.arange(0,dim),repeat=numA))
+    Blabels=list(product(np.arange(0,dim),repeat=numB))
+
+    for x in range(dim**2):
+        error_label=list(product(np.arange(0,dim),repeat=2))[x]
+
+        for row in range(dim**(2*numA)):
+            for col in range(dim**(2*numB)):
+
+                indA1,indA2,indB1,indB2=get_two_state_indices(dim,numA,numB,row,col)
+                current_coef=input_coef_mat[row,col]
+
+                if state_copy=='first':
+                    if current_coef>0:
+                        labelIn=np.array(Alabels[indA1]+Blabels[indB1])
+
+                        #create list of effected labels
+                        altered=[]
+
+                        labelOut=label_update(dim,adj_mat,target_node,labelIn,error_label)
+
+                        if compare_labels(labelOut,labelIn):
+                            altered.append(labelOut)
+                            #print('altered',altered)
+
+                    #determine which coefficients need to change and change them
+                    for entry in range(np.shape(altered)[0]):
+                        #graphs state basis label of coefficient to be updated
+                        focus=altered[entry]
+                        #get matrix indices of label
+                        id_indA1,id_indB1=match_label_to_index(dim,numA,numB,focus)
+                        #convert back to row and col of new_coef_mat
+                        id_row,id_col=index_convert(dim,numA,numB,id_indA1,id_indB1,indA2,indB2)
+                        #update coeficient matrix
+                        new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+
+                elif state_copy=='second':
+                    if current_coef>0:
+                        labelIn=np.array(Alabels[indA2]+Blabels[indB2])
+
+                        #create list of effected labels
+                        altered=[]
+
+                        labelOut=label_update(dim,adj_mat,target_node,labelIn,error_label)
+
+                        if compare_labels(labelOut,labelIn):
+                            altered.append(labelOut)
+                            #print('altered',altered)
+
+                    #determine which coefficients need to change and change them
+                    for entry in range(np.shape(altered)[0]):
+                        #graphs state basis label of coefficient to be updated
+                        focus=altered[entry]
+                        #get matrix indices of label
+                        id_indA2,id_indB2=match_label_to_index(dim,numA,numB,focus)
+                        #convert back to row and col of new_coef_mat
+                        id_row,id_col=index_convert(dim,numA,numB,indA1,indB1,id_indA2,id_indB2)
+                        #update coeficient matrix
+                        new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+
+    return new_coef_mat
+
 #**************************************************************************#
 #Defines noisy two qudit operation. First each qudit that the gate will act
 #on is sent through a depolarizing channel, then the perfect gate is performed
@@ -190,11 +262,16 @@ def noisy_TQG():
 
 
 #**************************************************************************#
+# zm=complex(1,0)*np.zeros((4,4))
+# zm[0,0]=1
+# print(zm, '\n')
+# coef_mat=qudit_through_channel(2,1,1,get_GHZ_adj(2),1,'first',zm,0.6)
+# print(coef_mat, '\n')
+# coef_mat=qudit_through_channel(2,1,1,get_GHZ_adj(2),1,'second',coef_mat,0.6)
+# print(coef_mat, '\n')
 
-zm=complex(1,0)*np.zeros((9,81))
-zm[0,0]=1
-coef_mat=perfect_CG(3,3,'GHZ','raise',1,zm,'sA')
-coef_mat=perfect_CG(3,3,'GHZ','lower',2,coef_mat,'sB')
-coef_mat=perfect_CG(3,3,'GHZ','lower',3,coef_mat,'sB')
-print(coef_mat)
+# coef_mat=perfect_CG(3,3,'GHZ','raise',1,zm,'sA')
+# coef_mat=perfect_CG(3,3,'GHZ','lower',2,coef_mat,'sB')
+# coef_mat=perfect_CG(3,3,'GHZ','lower',3,coef_mat,'sB')
+# print(coef_mat)
 # print(get_lin_adj(5))
