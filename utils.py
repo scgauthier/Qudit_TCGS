@@ -171,10 +171,39 @@ def get_two_state_indices(dim,numA,numB,row,col):
 #Helper function for combining two sets of partial indices to the full index
 #of the kronecker product state
 #**************************************************************************#
-def index_convert(dim,numA,numB,ind1A,ind1B,ind2A,ind2B):
-    row=int((ind1A*(dim**numA))+ind2A)
-    col=int((ind1B*(dim**numB))+ind2B)
+def index_convert(dim,numA,numB,indA1,indB1,indA2,indB2):
+    row=int((indA1*(dim**numA))+indA2)
+    col=int((indB1*(dim**numB))+indB2)
     return row,col
+
+#**************************************************************************#
+#Do the partial trace to isolate indicated state
+#**************************************************************************#
+def calc_reduced_state(dim,numA,numB,coef_mat_in,target_state):
+
+    reduced_mat=complex(1,0)*np.zeros((dim**numA,dim**numB))
+    if target_state=='first':
+        #fix first state label (via row and col)
+        for indA1 in range(dim**numA):
+            for indB1 in range(dim**numB):
+                #run through second state labels
+                for indA2 in range(dim**numA):
+                    for indB2 in range(dim**numB):
+                        #get row,col from coef_mat_in
+                        row,col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
+                        reduced_mat[indA1,indB1]+=coef_mat_in[row,col]
+    elif target_state=='second':
+        #fix first state label (via row and col)
+        for indA2 in range(dim**numA):
+            for indB2 in range(dim**numB):
+                #run through second state labels
+                for indA1 in range(dim**numA):
+                    for indB1 in range(dim**numB):
+                        #get row,col from coef_mat_in
+                        row,col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
+                        reduced_mat[indA2,indB2]+=coef_mat_in[row,col]
+
+    return reduced_mat
 
 # X=np.array([[0,1],[1,0]])
 # Z=np.array([[1,0],[0,-1]])

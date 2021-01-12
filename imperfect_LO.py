@@ -2,11 +2,12 @@ import time
 import os.path
 import numpy as np
 from itertools import product
+from random import randint
 from cmath import exp
 from math import pi
 from utils import getbasisR,get_GHZ_adj,get_lin_adj,assign_nodes,index_convert
 from utils import match_labA_to_indA,match_labB_to_indB,get_two_state_indices
-from utils import compare_labels,label_update,match_label_to_index
+from utils import compare_labels,label_update,match_label_to_index, calc_reduced_state
 # from weyl_covariant_channel import qudit_through_channel
 
 #********VARIABLES********************************************************#
@@ -21,6 +22,7 @@ from utils import compare_labels,label_update,match_label_to_index
 #set: options--sA or sB--describes whether gate acts on subset of nodes A or B
 #state_copy: options--first or second--describes whether depolarizing channel acts
 #           on qudit from first or second state copy
+#target_state: options--first or second--do partial trace to get reduced first or second state
 #**************************************************************************#
 
 #**************************************************************************#
@@ -52,7 +54,7 @@ def raiseA(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 #**************************************************************************#
 #Helper function to do the Clower operation on set A qudit (direction 12)
 #**************************************************************************#
-def lowerA(dim,numA,numB,labA1,labA2,labB2,indB1,indA2,target_node,adj_mat,new_coef_mat,current_coef):
+def lowerA(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 
     cutAdjRow = adj_mat[target_node-1,numA:(numA+numB)]
     cutBasisVec=getbasisR(numA+numB)[target_node-1][0:numA]
@@ -104,7 +106,7 @@ def lowerB(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 #**************************************************************************#
 #Helper function to do the Craise operation on set B qudit (direction 21)
 #**************************************************************************#
-def raiseB(dim,numA,numB,labA1,labB1,labB2,indB1,indA2,target_node,adj_mat,new_coef_mat,current_coef):
+def raiseB(dim,numA,numB,row,col,target_node,adj_mat,new_coef_mat,current_coef):
 
     cutAdjRow = adj_mat[target_node-1,0:numA]
     cutBasisVec=getbasisR(numA+numB)[target_node-1][numA:(numA+numB)]
@@ -148,6 +150,7 @@ def perfect_CG(dim,numA,numB,adj_mat,operation,target_node,coef_mat,set):
                 for j in range(dim**(2*numB)):
                     if abs(coef_mat[i,j])>1e-14:
                         cm=lowerA(dim,numA,numB,i,j,target_node,adj_mat,cm,coef_mat[i,j])
+
         else:
             print('Supported operations are raise and lower')
             return
@@ -243,6 +246,71 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,state_copy,coef_mat,
     return new_coef_mat
 
 #**************************************************************************#
+#Obtain random measurement results and make sure they satisfy the post-selection
+#condition, if they do not then obtain new measurement results and keep trying
+#**************************************************************************#
+def measure_and_post_select(dim,numA,numB,adj_mat):
+    dim_list=np.arange(dim)
+    #All possible measurement results
+    Alabels=list(product(dim_list,repeat=numA))
+    Blabels=list(product(dim_list,repeat=numB))
+
+    unmeasured=True
+    while unmeasured==True:
+        #choose random measurement result
+        jB=np.array(Blabels[randint(0,dim**numB - 1)])
+        jA=np.array(Alabels[randint(0,dim**numA - 1)])
+
+        #check if measurement condition is satisfied
+        for x in range(numA):
+            checkSum=0
+            #the B part of the sum
+            for y in range(numB):
+                checkSum+=adj_mat[x,numA+y]*jB[y]
+            #the A part of the sum
+            checkSum+=jA[x]
+            if (checkSum % dim)!=0:
+                unmeasured=True
+                break
+            unmeasured=False
+    return jA,jB
+
+#**************************************************************************#
+#Following obtaining a successful measurement label, update the coefficient
+#matrix appropriately
+#**************************************************************************#
+def post_measurement_state_update(dim,numA,numB,cmat_in,csubP):
+
+    dim_list=np.arange(dim)
+    new_coef_mat=complex(1,0)*np.zeros((dim**numA,dim**numB))
+
+    normK=0
+
+    if csubP=='P1':
+        indA2=0
+        #Application of measurement condition
+        for indA1 in range(dim**numA): #fix row of updated state
+            for indB1 in range(dim**numB): #fix col of updated state
+                for indB2 in range(dim**numB): #loop through other coefficients
+                    row,col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
+                    new_coef_mat[indA1,indB1]+=cmat_in[row,col]
+                    normK+=cmat_in[row,col] #calculate normK while updating
+        new_coef_mat=new_coef_mat/normK
+
+    elif csubP=='P2':
+        indB2=0
+        #Application of measurement condition
+        for indA1 in range(dim**numA): #fix row of updated state
+            for indB1 in range(dim**numB): #fix col of updated state
+                for indA2 in range(dim**numA): #loop through other coefficients
+                    row,col=index_convert(dim,numA,numB,indA1,indB1,indA2,indB2)
+                    new_coef_mat[indA1,indB1]+=cmat_in[row,col]
+                    normK+=cmat_in[row,col] #calculate normK while updating
+        new_coef_mat=new_coef_mat/normK
+
+    return new_coef_mat
+
+#**************************************************************************#
 #Defines noisy two qudit operation. First each qudit that the gate will act
 #on is sent through a depolarizing channel, then the perfect gate is performed
 #**************************************************************************#
@@ -250,10 +318,8 @@ def noisy_TQG(dim,numA,numB,adj_mat,operation,target_node,coef_mat,set,param):
 
     #apply noise to qudit from first copy of state
     coef_mat=qudit_through_channel(dim,numA,numB,adj_mat,target_node,'first',coef_mat,param)
-    print(coef_mat, '\n')
     #apply noise to qudit from second copy of state
     coef_mat=qudit_through_channel(dim,numA,numB,adj_mat,target_node,'second',coef_mat,param)
-    print(coef_mat, '\n')
     #do perfect gate between the two qudits
     coef_mat=perfect_CG(dim,numA,numB,adj_mat,operation,target_node,coef_mat,set)
 
@@ -263,9 +329,10 @@ def noisy_TQG(dim,numA,numB,adj_mat,operation,target_node,coef_mat,set,param):
 #Runs version of sub-protocol P1 with noisy two qudit operations on a given
 #input state, specified by cmat_in and the type params dim, num_nodes, graph_type
 #**************************************************************************#
-def noisy_protocol_P1(num_nodes,dim,graph_type,cmat_in,param):
-    dim_list=list(range(dim))
+def noisy_protocol_P1(num_nodes,dim,graph_type,cmat,param):
 
+    #turn one state input into two state input
+    cmat=np.kron(cmat,cmat)
     numA,numB=assign_nodes(num_nodes,graph_type) #determines node bi-partition
     #get adj_mat
     if graph_type=='GHZ':
@@ -277,58 +344,59 @@ def noisy_protocol_P1(num_nodes,dim,graph_type,cmat_in,param):
         return
 
     #do all noisy gates of P1
-    #'measure' & 'post-select' --> Use these to update coefficients
+    for x in range(1,num_nodes+1):
+        if x<=numA:
+            set='sA'
+            operation='raise'
+        else:
+            set='sB'
+            operation='lower'
+        cmat=noisy_TQG(dim,numA,numB,adj_mat,operation,x,cmat,set,param)
 
-######Old Version:
-    # dim_list=list(range(dim))
-    #
-    # numA,numB=assign_nodes(num_nodes,graph_type) #determines node bi-partition
-    #
-    # normK=0
-    # for x in range(0,dim**numA):
-    #     for y in range(0,dim**numB):
-    #         for z in range(0,y):
-    #             normK+=cmat_in[x,y]*cmat_in[x,z]+cmat_in[x,z]*cmat_in[x,y]
-    #         normK+=(cmat_in[x,y])**2
-    #
-    #
-    # #Application of measurement condition
-    # indices=list(product(dim_list,repeat=numB))
-    # coef_mat=np.zeros((dim**numA,dim**numB))
-    # for x in range(dim**numA):
-    #     for y in range(dim**numB):
-    #         controlB=np.array(indices[y])
-    #
-    #         for col_muB in range(dim**numB):
-    #             muB=np.array(indices[col_muB])
-    #             nuB=np.add((dim-1)*muB,controlB) % dim
-    #             #get col corresponding to nuB
-    #             col_nuB=match_labB_to_indB(dim,nuB)
-    #             #add to coefficient
-    #             coef_mat[x,y]+=(cmat_in[x,col_muB]*cmat_in[x,col_nuB])/(normK)
-    #
-    # return normK,coef_mat
+    #'measure' & 'post-select' --> Use the coefficient map for general states
+    cmat=post_measurement_state_update(dim,numA,numB,cmat,'P1') #input 2 states, output 1 state
 
+    return cmat
 #**************************************************************************#
 #Runs version of subprotocol P2 with noisy two qudit operations on a given input state
 #**************************************************************************#
-def noisy_protocol_P2(num_nodes,dim,graph_type,cmat_in,param):
-    return pi
+def noisy_protocol_P2(num_nodes,dim,graph_type,cmat,param):
+
+    #turn one state input into two state input
+    cmat=np.kron(cmat,cmat)
+    numA,numB=assign_nodes(num_nodes,graph_type) #determines node bi-partition
+    #get adj_mat
+    if graph_type=='GHZ':
+        adj_mat=get_GHZ_adj(num_nodes)
+    elif graph_type=='line':
+        adj_mat=get_lin_adj(num_nodes)
+    else:
+        print('Supported graph types are GHZ and line')
+        return
+
+    #do all noisy gates of P1
+    for x in range(1,num_nodes+1):
+        if x<=numA:
+            set='sA'
+            operation='lower'
+        else:
+            set='sB'
+            operation='raise'
+        cmat=noisy_TQG(dim,numA,numB,adj_mat,operation,x,cmat,set,param)
+
+    #'measure' & 'post-select' --> Use the coefficient map for general states
+    cmat=post_measurement_state_update(dim,numA,numB,cmat,'P2') #input 2 states, output 1 state
+
+    return cmat
 
 
 #**************************************************************************#
-# zm=complex(1,0)*np.zeros((4,4))
+# numA=1
+# numB=2
+# dim=3
+# graph_type='GHZ'
+# zm=complex(1,0)*np.zeros((3,9))
 # zm[0,0]=1
 # print(zm, '\n')
-# # coef_mat=qudit_through_channel(2,1,1,get_GHZ_adj(2),1,'first',zm,0.6)
-# coef_mat=noisy_TQG(2,2,'GHZ','raise',1,zm,'sA',1e-1)
-# print(coef_mat, '\n')
-# coef_mat=noisy_TQG(2,2,'GHZ','lower',2,coef_mat,'sB',1e-1)
-# print(coef_mat, '\n')
-# print(coef_mat, '\n')
-
-# coef_mat=perfect_CG(2,1,1,get_GHZ_adj(2),'raise',1,zm,'sA')
-# coef_mat=perfect_CG(2,1,1,get_GHZ_adj(2),'lower',2,coef_mat,'sB')
-# coef_mat=perfect_CG(3,3,'GHZ','lower',3,coef_mat,'sB')
-# print(coef_mat)
-# print(get_lin_adj(5))
+# cmat=noisy_protocol_P2(numA+numB,dim,graph_type,zm,0.1)
+# print(cmat, '\n')
