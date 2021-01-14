@@ -183,7 +183,7 @@ def single_plot(fids,psuccs,pcum_list,subP):
     ax2.legend(fontsize=14)
     ax1.tick_params(axis="x", labelsize=18)
     ax1.tick_params(axis="y", labelsize=18)
-    ax2.tick_params(axis="y", labelsize=18) 
+    ax2.tick_params(axis="y", labelsize=18)
     plt.show()
 
 #**************************************************************************#
@@ -195,7 +195,7 @@ def run_purification(num_nodes,dim,graph_type,input_type,param,iters,subP,altern
     psucc_inst=[None]
     pcum_list=[None]
     pcum=1
-    #prepare input P1_update_coefficients
+    #prepare input for coefficient update
     coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,param)
     fids.append(coef_mat[0,0])
 

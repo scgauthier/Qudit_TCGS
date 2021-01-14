@@ -1,6 +1,7 @@
 import time
 import os.path
 import numpy as np
+import matplotlib.pyplot as plt
 from itertools import product
 from random import randint
 from cmath import exp
@@ -8,6 +9,7 @@ from math import pi
 from utils import getbasisR,get_GHZ_adj,get_lin_adj,assign_nodes,index_convert
 from utils import match_labA_to_indA,match_labB_to_indB,get_two_state_indices
 from utils import compare_labels,label_update,match_label_to_index, calc_reduced_state
+from Recurrence_Analysis import get_input_coefficients
 # from weyl_covariant_channel import qudit_through_channel
 
 #********VARIABLES********************************************************#
@@ -279,14 +281,14 @@ def measure_and_post_select(dim,numA,numB,adj_mat):
 #Following obtaining a successful measurement label, update the coefficient
 #matrix appropriately
 #**************************************************************************#
-def post_measurement_state_update(dim,numA,numB,cmat_in,csubP):
+def post_measurement_state_update(dim,numA,numB,cmat_in,subP):
 
     dim_list=np.arange(dim)
     new_coef_mat=complex(1,0)*np.zeros((dim**numA,dim**numB))
 
     normK=0
 
-    if csubP=='P1':
+    if subP=='P1':
         indA2=0
         #Application of measurement condition
         for indA1 in range(dim**numA): #fix row of updated state
@@ -297,7 +299,7 @@ def post_measurement_state_update(dim,numA,numB,cmat_in,csubP):
                     normK+=cmat_in[row,col] #calculate normK while updating
         new_coef_mat=new_coef_mat/normK
 
-    elif csubP=='P2':
+    elif subP=='P2':
         indB2=0
         #Application of measurement condition
         for indA1 in range(dim**numA): #fix row of updated state
@@ -308,7 +310,7 @@ def post_measurement_state_update(dim,numA,numB,cmat_in,csubP):
                     normK+=cmat_in[row,col] #calculate normK while updating
         new_coef_mat=new_coef_mat/normK
 
-    return new_coef_mat
+    return normK,new_coef_mat
 
 #**************************************************************************#
 #Defines noisy two qudit operation. First each qudit that the gate will act
@@ -354,9 +356,9 @@ def noisy_protocol_P1(num_nodes,dim,graph_type,cmat,param):
         cmat=noisy_TQG(dim,numA,numB,adj_mat,operation,x,cmat,set,param)
 
     #'measure' & 'post-select' --> Use the coefficient map for general states
-    cmat=post_measurement_state_update(dim,numA,numB,cmat,'P1') #input 2 states, output 1 state
+    normK,cmat=post_measurement_state_update(dim,numA,numB,cmat,'P1') #input 2 states, output 1 state
 
-    return cmat
+    return normK,cmat
 #**************************************************************************#
 #Runs version of subprotocol P2 with noisy two qudit operations on a given input state
 #**************************************************************************#
@@ -385,16 +387,156 @@ def noisy_protocol_P2(num_nodes,dim,graph_type,cmat,param):
         cmat=noisy_TQG(dim,numA,numB,adj_mat,operation,x,cmat,set,param)
 
     #'measure' & 'post-select' --> Use the coefficient map for general states
-    cmat=post_measurement_state_update(dim,numA,numB,cmat,'P2') #input 2 states, output 1 state
+    normK,cmat=post_measurement_state_update(dim,numA,numB,cmat,'P2') #input 2 states, output 1 state
 
-    return cmat
+    return normK,cmat
+#**************************************************************************#
+#Manage running the purification protocol iteratively
+#**************************************************************************#
+def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_er_param_list,subP):
+    min_fids=[]
+    max_fids=[]
+    # min_stps=[]
+    # max_stps=[]
+    cycles=np.shape(gate_er_param_list)[0]
+    repeats=np.shape(state_param_list)[0]
 
+    for x in range(cycles):
+        gate_param=gate_er_param_list[x]
+        in_fids=[]
+        needmax=True
+        for y in range(repeats):
+            state_param=state_param_list[y]
+            #prepare input for noisy protocol
+            coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
+            in_fid=coef_mat[0,0]
+            print('fid in: ', abs(in_fid))
+            in_fids.append(in_fid)
+
+            if subP == 'P1':
+                normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
+
+            elif subP == 'P2':
+                normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+
+            print('out fid: ', abs(coef_mat[0,0]),'\n')
+            if abs(coef_mat[0,0])>in_fid and needmax==True:
+                max_fids.append(in_fids[y])
+                # max_stps.append(state_param_list[y-1])
+                needmax=False
+            # elif coef_mat[0,0]>in_fid and needmax==False:
+            #     continue
+            elif abs(coef_mat[0,0])<in_fid and needmax==False: # and y>1:
+                min_fids.append(in_fids[y-1])
+                # stps.append(state_param_list[y-1])
+                break
+        if needmax==True:
+            max_fids.append(None)
+            min_fids.append(None)
+
+
+    #Keep record of min fids, input fidelities
+    filename='../Noisy_fidrange/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,subP)
+    afile=open(filename,'a')
+    afile.write('Gate errors : \n')
+    afile.close()
+    for x in range(cycles):
+        gate_er=gate_er_param_list[x]
+        afile=open(filename,'a')
+        afile.write('{} \n'.format(gate_er))
+        afile.close()
+    afile=open(filename,'a')
+    afile.write('\n Minimum Fidelities : \n')
+    afile.close()
+    for x in range(cycles):
+        afile=open(filename,'a')
+        try: afile.write('{} \n'.format(min_fids[x]))
+        except IndexError: continue
+        afile.close()
+    afile=open(filename,'a')
+    afile.write('\n Maximum Fidelities : \n')
+    afile.close()
+    for x in range(cycles):
+        afile=open(filename,'a')
+        try: afile.write('{} \n'.format(max_fids[x]))
+        except IndexError: continue
+        afile.close()
+    # afile=open(filename,'a')
+    # afile.write('\n State parameters : \n')
+    # afile.close()
+    # for x in range(cycles):
+    #     afile=open(filename,'a')
+    #     afile.write('{} \n'.format(stps[x]))
+    #     afile.close()
+    return
 
 #**************************************************************************#
-# numA=1
+#Wrapper to handle plotting in run_purification if doplot is true
+#**************************************************************************#
+def single_plot(fids,psuccs,pcum_list,subP):
+    xdat=range(0,np.size(fids))
+
+    fig,ax1=plt.subplots()
+
+    ax2=ax1.twinx()
+    ax1.plot(xdat,fids,'blue')
+    ax2.plot(xdat,pcum_list,'co',label='Cumulative Probability')
+    ax2.plot(xdat,psuccs,'ro',label='Stage probability')
+    ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
+    ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
+    ax2.set_ylabel('Probaility of success',fontsize=18)
+    ax2.legend(fontsize=14)
+    ax1.tick_params(axis="x", labelsize=18)
+    ax1.tick_params(axis="y", labelsize=18)
+    ax2.tick_params(axis="y", labelsize=18)
+    plt.show()
+
+#**************************************************************************#
+#Handles purification mostly for Werner type states
+#**************************************************************************#
+def run_purification(num_nodes,dim,graph_type,input_type,state_param,gate_param,iters,subP,alternation,doplot):
+    csubP=subP
+    fids=[]
+    psucc_inst=[None]
+    pcum_list=[None]
+    pcum=1
+    #prepare input for coefficient update
+    coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
+    fids.append(coef_mat[0,0])
+
+    for x in range(iters):
+        if csubP == 'P1':
+            normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
+            if alternation==True:
+                csubP='P2'
+
+        elif csubP == 'P2':
+            normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+            if alternation==True:
+                csubP='P1'
+
+        fids.append(abs(coef_mat[0,0]))
+        psucc_inst.append(normK)
+        pcum*=normK
+        pcum_list.append(pcum)
+
+    if doplot == True:
+        single_plot(fids,psucc_inst,pcum_list,subP)
+
+    return fids
+
+#**************************************************************************#
+# numA=2
 # numB=2
-# dim=3
-# graph_type='GHZ'
+# dim=2
+# graph_type='line'
+# input_type='DP'
+# subP='P2'
+#
+# # run_purification(numA+numB,dim,graph_type,input_type,0.17,0.04,2,subP,True,True)
+# # subP='P1
+# detect_fid_range(dim,numA+numB,graph_type,input_type,np.arange(0.00,0.2,0.01),np.arange(0.04,0.05,0.005),subP)
+
 # zm=complex(1,0)*np.zeros((3,9))
 # zm[0,0]=1
 # print(zm, '\n')
