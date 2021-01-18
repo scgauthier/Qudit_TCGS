@@ -1,6 +1,7 @@
 import time
 import os.path
 import numpy as np
+import multiprocessing
 import matplotlib.pyplot as plt
 from itertools import product
 from random import randint
@@ -392,53 +393,68 @@ def noisy_protocol_P2(num_nodes,dim,graph_type,cmat,param):
 
     return normK,cmat
 #**************************************************************************#
-#Manage running the purification protocol iteratively
+#wrapper for using muti-processing in detect_fid_range
+#**************************************************************************#
+def detection_wrapper(param_tuple):
+    """wrapper preparing for using map (which has issues with multiple variables
+    -> pack all vars in one tuple).x[0]<-gate_er_param_list, x[1]<-state_param_list,
+    x[2]<-dim,x[3]<-num_nodes,x[4]<-graph_type,x[5]<-input_type,x[6]<-subP,
+    x[7]<-iters,x[8]<-repeats,x[9]<-Fmin,x[10]<-Fmax,x[11]<-x (current gate error)"""
+
+    gate_er_param_list,state_param_list,dim,num_nodes,graph_type,input_type,subP,iters,repeats,Fmin,Fmax,x=param_tuple #unpack
+    gate_param=gate_er_param_list[x]
+
+    csubP=subP
+    in_fids=[]
+    needmax=True
+    for y in range(repeats):
+        state_param=state_param_list[y]
+        #prepare input for noisy protocol
+        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
+        in_fid=coef_mat[0,0]
+        # print('fid in: ', abs(in_fid))
+        in_fids.append(in_fid)
+
+        for z in range(iters):
+            if csubP == 'P1':
+                normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
+                csubP='P2'
+            elif csubP == 'P2':
+                normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+                csubP='P1'
+
+        # print('out fid: ', abs(coef_mat[0,0]),'\n')
+        if abs(coef_mat[0,0])>=in_fid and needmax==True:
+            Fmax[x]=in_fids[y]
+            needmax=False
+        elif abs(coef_mat[0,0])<in_fid and needmax==False: # and y>1:
+            Fmin[x]=in_fids[y-1]
+            break
+    if needmax==True:
+        Fmax[x]=2.0
+        Fmin[x]=2.0
+
+    return Fmin,Fmax
+
+#**************************************************************************#
+#Manage running the purification protocol iteratively and searching for
+#the purification range
 #**************************************************************************#
 def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_er_param_list,subP,iters):
-    min_fids=[]
-    max_fids=[]
-    csubP=subP
-    # min_stps=[]
-    # max_stps=[]
+
     cycles=np.shape(gate_er_param_list)[0]
     repeats=np.shape(state_param_list)[0]
 
-    for x in range(cycles):
-        gate_param=gate_er_param_list[x]
-        in_fids=[]
-        needmax=True
-        for y in range(repeats):
-            state_param=state_param_list[y]
-            #prepare input for noisy protocol
-            coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
-            in_fid=coef_mat[0,0]
-            # print('fid in: ', abs(in_fid))
-            in_fids.append(in_fid)
+    min_fids=np.zeros((cycles,))
+    max_fids=np.zeros((cycles,))
 
-            for z in range(iters):
-                if csubP == 'P1':
-                    normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
-                    csubP='P2'
-                elif csubP == 'P2':
-                    normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
-                    csubP='P1'
+    #set up multiprocessing
+    manager=multiprocessing.Manager() #create manager to handle shared objects
+    Fmin=manager.Array('f',min_fids) #Proxy for shared array
+    Fmax=manager.Array('f',max_fids) #Proxy for shared array
+    mypool=multiprocessing.Pool() #Create pool of worker processes
 
-            # print('out fid: ', abs(coef_mat[0,0]),'\n')
-            if abs(coef_mat[0,0])>=in_fid and needmax==True:
-                max_fids.append(in_fids[y])
-                # max_stps.append(state_param_list[y-1])
-                needmax=False
-            # elif coef_mat[0,0]>in_fid and needmax==False:
-            #     continue
-            elif abs(coef_mat[0,0])<in_fid and needmax==False: # and y>1:
-                min_fids.append(in_fids[y-1])
-                # stps.append(state_param_list[y-1])
-                break
-        if needmax==True:
-            max_fids.append(None)
-            min_fids.append(None)
-        #reset to input before next round    
-        csubP=subP
+    mypool.map(detection_wrapper, [(gate_er_param_list,state_param_list,dim,num_nodes,graph_type,input_type,subP,iters,repeats,Fmin,Fmax,x) for x in range(cycles)])
 
     #Keep record of min fids, input fidelities
     filename='../Noisy_fidrange/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,subP)
@@ -455,7 +471,7 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     afile.close()
     for x in range(cycles):
         afile=open(filename,'a')
-        try: afile.write('{} \n'.format(min_fids[x]))
+        try: afile.write('{} \n'.format(Fmin[x]))
         except IndexError: continue
         afile.close()
     afile=open(filename,'a')
@@ -463,18 +479,10 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     afile.close()
     for x in range(cycles):
         afile=open(filename,'a')
-        try: afile.write('{} \n'.format(max_fids[x]))
+        try: afile.write('{} \n'.format(Fmax[x]))
         except IndexError: continue
         afile.close()
-    # afile=open(filename,'a')
-    # afile.write('\n State parameters : \n')
-    # afile.close()
-    # for x in range(cycles):
-    #     afile=open(filename,'a')
-    #     afile.write('{} \n'.format(stps[x]))
-    #     afile.close()
     return
-
 #**************************************************************************#
 #Wrapper to handle plotting in run_purification if doplot is true
 #**************************************************************************#
