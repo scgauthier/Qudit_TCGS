@@ -530,19 +530,3 @@ def run_purification(num_nodes,dim,graph_type,input_type,state_param,gate_param,
     return fids
 
 #**************************************************************************#
-numA=2
-numB=2
-dim=2
-graph_type='line'
-input_type='DP'
-subP='P2'
-
-# # run_purification(numA+numB,dim,graph_type,input_type,0.17,0.04,2,subP,True,True)
-# # subP='P1
-detect_fid_range(dim,numA+numB,graph_type,input_type,np.arange(0.00,0.45,0.01),np.arange(0.0,0.08,0.01),subP,2)
-
-# zm=complex(1,0)*np.zeros((3,9))
-# zm[0,0]=1
-# print(zm, '\n')
-# cmat=noisy_protocol_P2(numA+numB,dim,graph_type,zm,0.1)
-# print(cmat, '\n')
