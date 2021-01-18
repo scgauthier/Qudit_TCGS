@@ -294,7 +294,10 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     manager=multiprocessing.Manager() #create manager to handle shared objects
     FO=manager.Array('f',fidsOut) #Proxy for shared array
     FI=manager.Array('f',fidsIn) #Proxy for shared array
-    mypool=multiprocessing.Pool() #Create pool of worker processes
+    if repeats<80:
+        mypool=multiprocessing.Pool(repeats) #Create pool of worker processes
+    else:
+        mypool=multiprocessing.Pool() #Create pool of worker processes
 
     #update fidelities
     mypool.map(get_fidsOut,[(paramList,dim,num_nodes,repeats,graph_type,iters,FI,csubP,alternation,FO,x) for x in range(repeats)])

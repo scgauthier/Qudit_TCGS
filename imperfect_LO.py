@@ -452,7 +452,11 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     manager=multiprocessing.Manager() #create manager to handle shared objects
     Fmin=manager.Array('f',min_fids) #Proxy for shared array
     Fmax=manager.Array('f',max_fids) #Proxy for shared array
-    mypool=multiprocessing.Pool() #Create pool of worker processes
+    
+    if cycles<80:
+        mypool=multiprocessing.Pool(cycles) #Create pool of worker processes
+    else:
+        mypool=multiple.Pool() #Create pool of worker processes
 
     mypool.map(detection_wrapper, [(gate_er_param_list,state_param_list,dim,num_nodes,graph_type,input_type,subP,iters,repeats,Fmin,Fmax,x) for x in range(cycles)])
 
