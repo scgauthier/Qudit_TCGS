@@ -412,7 +412,7 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
             #prepare input for noisy protocol
             coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
             in_fid=coef_mat[0,0]
-            print('fid in: ', abs(in_fid))
+            # print('fid in: ', abs(in_fid))
             in_fids.append(in_fid)
 
             for z in range(iters):
@@ -423,7 +423,7 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
                     normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
                     csubP='P1'
 
-            print('out fid: ', abs(coef_mat[0,0]),'\n')
+            # print('out fid: ', abs(coef_mat[0,0]),'\n')
             if abs(coef_mat[0,0])>=in_fid and needmax==True:
                 max_fids.append(in_fids[y])
                 # max_stps.append(state_param_list[y-1])
