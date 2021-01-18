@@ -16,6 +16,7 @@ from Recurrence_Analysis import get_input_coefficients
 #dim: dimension of state_shape
 #num_nodes: number of nodes in graph state
 #graph_type: options are 'GHZ', 'line'. Specifies type of graph state by its adjacency matrix.
+#input_type: options are 'oneParam', 'DP', or 'SQWN'. Describes what family of states input belongs to
 #operation: options are 'raise' or 'lower'. Defines whether controlled two qudit gate applies X or X^(d-1)
 #row (col): row (column) associated with current entry of the two state coefficient matrix
 #    coefficient from 2 state density matrix
@@ -393,9 +394,10 @@ def noisy_protocol_P2(num_nodes,dim,graph_type,cmat,param):
 #**************************************************************************#
 #Manage running the purification protocol iteratively
 #**************************************************************************#
-def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_er_param_list,subP):
+def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_er_param_list,subP,iters):
     min_fids=[]
     max_fids=[]
+    csubP=subP
     # min_stps=[]
     # max_stps=[]
     cycles=np.shape(gate_er_param_list)[0]
@@ -413,14 +415,16 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
             print('fid in: ', abs(in_fid))
             in_fids.append(in_fid)
 
-            if subP == 'P1':
-                normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
-
-            elif subP == 'P2':
-                normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+            for z in range(iters):
+                if csubP == 'P1':
+                    normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
+                    csubP='P2'
+                elif csubP == 'P2':
+                    normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+                    csubP='P1'
 
             print('out fid: ', abs(coef_mat[0,0]),'\n')
-            if abs(coef_mat[0,0])>in_fid and needmax==True:
+            if abs(coef_mat[0,0])>=in_fid and needmax==True:
                 max_fids.append(in_fids[y])
                 # max_stps.append(state_param_list[y-1])
                 needmax=False
@@ -526,16 +530,16 @@ def run_purification(num_nodes,dim,graph_type,input_type,state_param,gate_param,
     return fids
 
 #**************************************************************************#
-# numA=2
-# numB=2
-# dim=2
-# graph_type='line'
-# input_type='DP'
-# subP='P2'
-#
+numA=2
+numB=2
+dim=2
+graph_type='line'
+input_type='DP'
+subP='P2'
+
 # # run_purification(numA+numB,dim,graph_type,input_type,0.17,0.04,2,subP,True,True)
 # # subP='P1
-# detect_fid_range(dim,numA+numB,graph_type,input_type,np.arange(0.00,0.2,0.01),np.arange(0.04,0.05,0.005),subP)
+detect_fid_range(dim,numA+numB,graph_type,input_type,np.arange(0.00,0.45,0.01),np.arange(0.0,0.08,0.01),subP,2)
 
 # zm=complex(1,0)*np.zeros((3,9))
 # zm[0,0]=1

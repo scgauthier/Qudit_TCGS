@@ -78,6 +78,22 @@ def state_through_channel(dim,num_nodes,graph_type,param):
     return coef_mat
 
 #***************************************************************************#
+def single_qudit_through_channel(dim,num_nodes,graph_type,param):
+
+    numA,numB=assign_nodes(num_nodes,graph_type)
+
+    if graph_type=='GHZ':
+        adj_mat=get_GHZ_adj(num_nodes)
+    elif graph_type=='line':
+        adj_mat=get_lin_adj(num_nodes)
+
+    coef_mat=perfect_coef_mat(dim,numA,numB)
+
+    coef_mat=qudit_through_channel(dim,numA,numB,adj_mat,1,coef_mat,param)
+
+    return coef_mat
+
+#***************************************************************************#
 def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     for x in range(np.shape(paramList)[0]):
@@ -94,4 +110,19 @@ def save_depolarized_states(dim,num_nodes,graph_type,paramList):
 
     return
 
+#***************************************************************************#
+def save_single_qudit_white_noise(dim,num_nodes,graph_type,paramList):
+    for x in range(np.shape(paramList)[0]):
+        pstring=str(paramList[x])
+        filename='../Single_Qudit_White_Noise/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        if os.path.isfile(filename):
+            continue
+        else:
+            afile=open(filename,'w')
+            for row in single_qudit_through_channel(dim,num_nodes,graph_type,paramList[x]):
+                np.savetxt(afile,row)
+
+            afile.close()
+
+    return
 #***************************************************************************#

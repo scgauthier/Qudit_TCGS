@@ -7,7 +7,7 @@ from math import isclose
 from itertools import product
 from operator import add
 from utils import assign_nodes, match_labB_to_indB, match_labA_to_indA
-from weyl_covariant_channel import state_through_channel
+from weyl_covariant_channel import state_through_channel, single_qudit_through_channel
 
 #********VARIABLES********************************************************#
 #num_nodes: number of nodes in graph
@@ -99,6 +99,14 @@ def get_input_coefficients(num_nodes,dim,graph_type,input_type,param):
         else:
             coef_mat=state_through_channel(dim,num_nodes,graph_type,param)
 
+    elif input_type=='SQWN':
+        pstring=str(param)
+        filename='../Single_Qudit_White_Noise/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,pstring)
+        if os.path.isfile(filename):
+            coef_mat=np.loadtxt(filename).reshape(dim**numA,dim**numB)
+        else:
+            coef_mat=single_qudit_through_channel(dim,num_nodes,graph_type,param)
+
     return coef_mat
 #**************************************************************************#
 #Runs sub-protocol P1 on a given input state, specified by cmat_in and the
@@ -174,8 +182,8 @@ def single_plot(fids,psuccs,pcum_list,subP):
     fig,ax1=plt.subplots()
 
     ax2=ax1.twinx()
-    ax1.plot(xdat,fids,'blue')
-    ax2.plot(xdat,pcum_list,'co',label='Cumulative Probability')
+    ax1.plot(xdat,fids,'blue',label='Fidelity')
+    ax2.plot(xdat,pcum_list,'x',markersize=10,label='Cumulative Probability')
     ax2.plot(xdat,psuccs,'ro',label='Stage probability')
     ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
     ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
