@@ -437,7 +437,8 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
         if needmax==True:
             max_fids.append(None)
             min_fids.append(None)
-
+        #reset to input before next round    
+        csubP=subP
 
     #Keep record of min fids, input fidelities
     filename='../Noisy_fidrange/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,subP)
