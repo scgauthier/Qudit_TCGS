@@ -550,11 +550,3 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
     return
 
 #**************************************************************************#
-dim=2
-num_nodes=3
-graph_type='line'
-state_param_list=np.arange(0.1,0.3,0.01)
-gate_er_param_list=[0.0,0.01,0.02]
-subP='P1'
-iters=8
-get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_param_list,subP,iters)
