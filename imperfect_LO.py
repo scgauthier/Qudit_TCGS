@@ -392,55 +392,95 @@ def noisy_protocol_P2(num_nodes,dim,graph_type,cmat,param):
     normK,cmat=post_measurement_state_update(dim,numA,numB,cmat,'P2') #input 2 states, output 1 state
 
     return normK,cmat
-#**************************************************************************#
-#wrapper for using muti-processing in detect_fid_range
-#**************************************************************************#
-def detection_wrapper(param_tuple):
+
+# #**************************************************************************#
+# #Wrapper to handle plotting in run_purification if doplot is true
+# #**************************************************************************#
+# def single_plot(fids,psuccs,pcum_list,subP):
+#     xdat=range(0,np.size(fids))
+#
+#     fig,ax1=plt.subplots()
+#
+#     ax2=ax1.twinx()
+#     ax1.plot(xdat,fids,'blue')
+#     ax2.plot(xdat,pcum_list,'co',label='Cumulative Probability')
+#     ax2.plot(xdat,psuccs,'ro',label='Stage probability')
+#     ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
+#     ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
+#     ax2.set_ylabel('Probaility of success',fontsize=18)
+#     ax2.legend(fontsize=14)
+#     ax1.tick_params(axis="x", labelsize=18)
+#     ax1.tick_params(axis="y", labelsize=18)
+#     ax2.tick_params(axis="y", labelsize=18)
+#     plt.show()
+#
+# #**************************************************************************#
+# #Handles purification mostly for Werner type states
+# #**************************************************************************#
+# def run_purification(num_nodes,dim,graph_type,input_type,state_param,gate_param,iters,subP,alternation,doplot):
+#     csubP=subP
+#     fids=[]
+#     psucc_inst=[None]
+#     pcum_list=[None]
+#     pcum=1
+#     #prepare input for coefficient update
+#     coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
+#     fids.append(coef_mat[0,0])
+#
+#     for x in range(iters):
+#         if csubP == 'P1':
+#             normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
+#             if alternation==True:
+#                 csubP='P2'
+#
+#         elif csubP == 'P2':
+#             normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
+#             if alternation==True:
+#                 csubP='P1'
+#
+#         fids.append(abs(coef_mat[0,0]))
+#         psucc_inst.append(normK)
+#         pcum*=normK
+#         pcum_list.append(pcum)
+#
+#     if doplot == True:
+#         single_plot(fids,psucc_inst,pcum_list,subP)
+#
+#     return fids
+
+#***************************************************************************#
+#Wrapper for use in get_purification_range
+#***************************************************************************#
+def get_fidsOut(param_tuple):
     """wrapper preparing for using map (which has issues with multiple variables
-    -> pack all vars in one tuple).x[0]<-gate_er_param_list, x[1]<-state_param_list,
-    x[2]<-dim,x[3]<-num_nodes,x[4]<-graph_type,x[5]<-input_type,x[6]<-subP,
-    x[7]<-iters,x[8]<-repeats,x[9]<-Fmin,x[10]<-Fmax,x[11]<-x (current gate error)"""
+    -> pack all vars in one tuple). x[0]<-gate_er, x[1]<-state_param_list,x[2]<-dim,x[3]=num_nodes
+    x[4]<-graph_type, x[5]<-csubP,x[6]<-iters,x[7]<-repeats, x[8]<-FO, x[9]<-x"""
 
-    gate_er_param_list,state_param_list,dim,num_nodes,graph_type,input_type,subP,iters,repeats,Fmin,Fmax,x=param_tuple #unpack
-    gate_param=gate_er_param_list[x]
+    gate_er,state_param_list,dim,num_nodes,graph_type,csubP,iters,repeats,FO,x=param_tuple #unpack
+    state_param=state_param_list[x]
 
-    csubP=subP
-    in_fids=[]
-    needmax=True
-    for y in range(repeats):
-        state_param=state_param_list[y]
-        #prepare input for noisy protocol
-        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
-        in_fid=coef_mat[0,0]
-        # print('fid in: ', abs(in_fid))
-        in_fids.append(in_fid)
+    coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',state_param)
 
-        for z in range(iters):
-            if csubP == 'P1':
-                normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
-                csubP='P2'
-            elif csubP == 'P2':
-                normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
-                csubP='P1'
+    for z in range(iters):
 
-        # print('out fid: ', abs(coef_mat[0,0]),'\n')
-        if abs(coef_mat[0,0])>=in_fid and needmax==True:
-            Fmax[x]=in_fids[y]
-            needmax=False
-        elif abs(coef_mat[0,0])<in_fid and needmax==False: # and y>1:
-            Fmin[x]=in_fids[y-1]
-            break
-    if needmax==True:
-        Fmax[x]=2.0
-        Fmin[x]=2.0
+        if csubP=='P1':
+            normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_er)
+            csubP='P2'
 
-    return Fmin,Fmax
+        elif csubP=='P2':
+            normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_er)
+            csubP='P1'
 
+        else:
+            print('field subP should be specified as either P1 or P2 \n', 'Example: to start with P1 enter P1')
+            return
+
+        FO[x+(z*repeats)]=abs(coef_mat[0,0])
 #**************************************************************************#
 #Manage running the purification protocol iteratively and searching for
 #the purification range
 #**************************************************************************#
-def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_er_param_list,subP,iters):
+def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_param_list,subP,iters):
 
     cycles=np.shape(gate_er_param_list)[0]
     repeats=np.shape(state_param_list)[0]
@@ -448,17 +488,38 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     min_fids=np.zeros((cycles,))
     max_fids=np.zeros((cycles,))
 
-    #set up multiprocessing
-    manager=multiprocessing.Manager() #create manager to handle shared objects
-    Fmin=manager.Array('f',min_fids) #Proxy for shared array
-    Fmax=manager.Array('f',max_fids) #Proxy for shared array
-    
-    if cycles<80:
-        mypool=multiprocessing.Pool(cycles) #Create pool of worker processes
-    else:
-        mypool=multiple.Pool() #Create pool of worker processes
+    for x in range(cycles):
+        gate_er=gate_er_param_list[x]
+        csubP=subP
 
-    mypool.map(detection_wrapper, [(gate_er_param_list,state_param_list,dim,num_nodes,graph_type,input_type,subP,iters,repeats,Fmin,Fmax,x) for x in range(cycles)])
+        fidsOut=np.zeros((iters*repeats,))
+        slopes=[None]
+
+        #set up multiprocessing
+        manager=multiprocessing.Manager() #create manager to handle shared objects
+        FO=manager.Array('f',fidsOut) #Proxy for shared array
+        mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
+
+        #update fidelities
+        mypool.map(get_fidsOut,[(gate_er,state_param_list,dim,num_nodes,graph_type,csubP,iters,repeats,FO,x) for x in range(repeats)])
+        #find critical points from each round of purification and calculate slopes
+        for z in range(iters):
+            for y in range(1,repeats-1):
+                slopes.append(abs((FO[y + (z*repeats)]-FO[(y-1) + (z*repeats)])/(state_param_list[y]-state_param_list[y-1])))
+            slopes.append(abs((FO[repeats-1+(z*repeats)]-FO[(repeats-2+(z*repeats))])/(state_param_list[repeats-1]-state_param_list[repeats-2])))
+            slopes.append(None)
+
+        for z in range(iters):
+            for y in range(1,repeats):
+                if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
+                    if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1 and z>(iters/2):
+                        crit_q=state_param_list[y]
+                        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
+                        fid_in=coef_mat[0,0]
+                        min_fids[x]=coef_mat[0,0]
+                        break
+        max_fids[x]=max(FO[(iters-1)*repeats : iters*repeats])
+
 
     #Keep record of min fids, input fidelities
     filename='../Noisy_fidrange/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,subP)
@@ -475,7 +536,7 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     afile.close()
     for x in range(cycles):
         afile=open(filename,'a')
-        try: afile.write('{} \n'.format(Fmin[x]))
+        try: afile.write('{} \n'.format(min_fids[x]))
         except IndexError: continue
         afile.close()
     afile=open(filename,'a')
@@ -483,63 +544,17 @@ def detect_fid_range(dim,num_nodes,graph_type,input_type,state_param_list,gate_e
     afile.close()
     for x in range(cycles):
         afile=open(filename,'a')
-        try: afile.write('{} \n'.format(Fmax[x]))
+        try: afile.write('{} \n'.format(max_fids[x]))
         except IndexError: continue
         afile.close()
     return
-#**************************************************************************#
-#Wrapper to handle plotting in run_purification if doplot is true
-#**************************************************************************#
-def single_plot(fids,psuccs,pcum_list,subP):
-    xdat=range(0,np.size(fids))
-
-    fig,ax1=plt.subplots()
-
-    ax2=ax1.twinx()
-    ax1.plot(xdat,fids,'blue')
-    ax2.plot(xdat,pcum_list,'co',label='Cumulative Probability')
-    ax2.plot(xdat,psuccs,'ro',label='Stage probability')
-    ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
-    ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
-    ax2.set_ylabel('Probaility of success',fontsize=18)
-    ax2.legend(fontsize=14)
-    ax1.tick_params(axis="x", labelsize=18)
-    ax1.tick_params(axis="y", labelsize=18)
-    ax2.tick_params(axis="y", labelsize=18)
-    plt.show()
 
 #**************************************************************************#
-#Handles purification mostly for Werner type states
-#**************************************************************************#
-def run_purification(num_nodes,dim,graph_type,input_type,state_param,gate_param,iters,subP,alternation,doplot):
-    csubP=subP
-    fids=[]
-    psucc_inst=[None]
-    pcum_list=[None]
-    pcum=1
-    #prepare input for coefficient update
-    coef_mat=get_input_coefficients(num_nodes,dim,graph_type,input_type,state_param)
-    fids.append(coef_mat[0,0])
-
-    for x in range(iters):
-        if csubP == 'P1':
-            normK,coef_mat=noisy_protocol_P1(num_nodes,dim,graph_type,coef_mat,gate_param)
-            if alternation==True:
-                csubP='P2'
-
-        elif csubP == 'P2':
-            normK,coef_mat=noisy_protocol_P2(num_nodes,dim,graph_type,coef_mat,gate_param)
-            if alternation==True:
-                csubP='P1'
-
-        fids.append(abs(coef_mat[0,0]))
-        psucc_inst.append(normK)
-        pcum*=normK
-        pcum_list.append(pcum)
-
-    if doplot == True:
-        single_plot(fids,psucc_inst,pcum_list,subP)
-
-    return fids
-
-#**************************************************************************#
+dim=2
+num_nodes=3
+graph_type='line'
+state_param_list=np.arange(0.1,0.3,0.01)
+gate_er_param_list=[0.0,0.01,0.02]
+subP='P1'
+iters=8
+get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_param_list,subP,iters)

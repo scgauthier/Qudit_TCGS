@@ -294,10 +294,8 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
     manager=multiprocessing.Manager() #create manager to handle shared objects
     FO=manager.Array('f',fidsOut) #Proxy for shared array
     FI=manager.Array('f',fidsIn) #Proxy for shared array
-    if repeats<80:
-        mypool=multiprocessing.Pool(repeats) #Create pool of worker processes
-    else:
-        mypool=multiprocessing.Pool() #Create pool of worker processes
+    mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
+
 
     #update fidelities
     mypool.map(get_fidsOut,[(paramList,dim,num_nodes,repeats,graph_type,iters,FI,csubP,alternation,FO,x) for x in range(repeats)])
@@ -321,6 +319,7 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
                     afile=open(filename,'a')
                     afile.write('Nodes {}, iteration {}, slope: {}, critical point at q value: {}\n'.format(num_nodes,z,slopes[y+(z*repeats)],q_val))
                     afile.close()
+                    break
     try: qcrit
     except NameError: qcrit=None
     if qcrit!=None:
