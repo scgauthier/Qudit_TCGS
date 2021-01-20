@@ -498,7 +498,10 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         #set up multiprocessing
         manager=multiprocessing.Manager() #create manager to handle shared objects
         FO=manager.Array('f',fidsOut) #Proxy for shared array
-        mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
+        if cycles<multiprocessing.cpu_count():
+            mypool=multiprocessing.Pool(cycles)
+        else:
+            mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
 
         #update fidelities
         mypool.map(get_fidsOut,[(gate_er,state_param_list,dim,num_nodes,graph_type,csubP,iters,repeats,FO,x) for x in range(repeats)])
