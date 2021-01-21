@@ -524,7 +524,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         z=iters-1
         for y in range(1,repeats):
             if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
-                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>2:
+                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>2.2:
                     crit_q=state_param_list[y]
                     coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
                     fid_in=coef_mat[0,0]
