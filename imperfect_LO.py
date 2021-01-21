@@ -494,10 +494,13 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         gate_er=gate_er_param_list[x]
         csubP=subP
 
-        if x>0:
+        if x>0 and crit_q+(10*step)<initial_bound:
             try: crit_q
             except NameError: crit_q=initial_bound+0.01
             state_param_list=np.arange(0,crit_q+(10*step),step)
+            repeats=np.shape(state_param_list)[0]
+        elif x>0:
+            state_param_list=np.arange(0,initial_bound,step)
             repeats=np.shape(state_param_list)[0]
 
         fidsOut=np.zeros((iters*repeats,))
