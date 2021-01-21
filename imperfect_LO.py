@@ -532,7 +532,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         max_fids[x]=max(FO[(iters-1)*repeats : iters*repeats])
 
         plt.figure()
-        plt.plot(state_param_list,FI[0:repeats],label='Initial Fidelity')
+        # plt.plot(state_param_list,FI[0:repeats],label='Initial Fidelity')
         for z in range(iters):
             if (z%2)!=0 or z==0 or z==(iters-1):
                 plt.plot(state_param_list,FO[z*repeats:((z+1)*repeats)],label='F out iteration {}'.format(z))
