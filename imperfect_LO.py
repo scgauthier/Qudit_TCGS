@@ -523,7 +523,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         for z in range(iters):
             for y in range(1,repeats):
                 if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
-                    if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1 and z>(iters/2):
+                    if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>2 and z>(iters/2):
                         crit_q=state_param_list[y]
                         coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
                         fid_in=coef_mat[0,0]
@@ -540,7 +540,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
         plt.title('Gate Error = {}, dim={}, N={}'.format(gate_er,dim,num_nodes))
-        figname='../Figures/GateEr_Fids_{}_{}_{}_{}.jpg'.format(dim,num_nodes,graph_type,subP)
+        figname='../Figures/GateEr_Fids_{}_{}_{}_{}.jpg'.format(dim,num_nodes,gate_er,subP)
         plt.savefig(figname,dpi=300)
 
         plt.figure()
