@@ -531,6 +531,18 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
                         break
         max_fids[x]=max(FO[(iters-1)*repeats : iters*repeats])
 
+        plt.figure()
+        for z in range(iters):
+            if (z%2)!=0 or z==0 or z==(iters-1):
+                plt.plot(state_param_list,slopes[(z*repeats):((z+1)*repeats)],label='Iteration {}'.format(z))
+        plt.legend()
+        plt.xlabel('Depolarization channel parameter q', fontsize=18)
+        plt.ylabel('Instantaneous rate of change of fidelity')
+        plt.title('Gate Error = {}, dim={}, N={}'.format(gate_er,dim,num_nodes))
+        figname='../Figures/GateEr_Slopes_{}_{}_{}_{}.jpg'.format(dim,num_nodes,gate_er,subP)
+        plt.savefig(figname,dpi=300)
+        plt.close()
+
 
     #Keep record of min fids, input fidelities
     filename='../Noisy_fidrange/{}_{}_{}_{}.txt'.format(dim,num_nodes,graph_type,subP)
