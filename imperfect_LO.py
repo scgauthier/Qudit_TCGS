@@ -535,7 +535,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         plt.plot(paramList,FI[0:repeats],label='Initial Fidelity')
         for z in range(iters):
             if (z%2)!=0 or z==0 or z==(iters-1):
-                plt.plot(paramList,FO[z*repeats:((z+1)*repeats)],label='F out iteration {}'.format(z))
+                plt.plot(state_param_list,FO[z*repeats:((z+1)*repeats)],label='F out iteration {}'.format(z))
         plt.legend()
         plt.xlabel('Depolarization channel parameter q',fontsize=18)
         plt.ylabel('Fidelity to perfect graph state', fontsize=18)
