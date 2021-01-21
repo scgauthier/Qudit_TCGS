@@ -507,7 +507,7 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
         manager=multiprocessing.Manager() #create manager to handle shared objects
         FO=manager.Array('f',fidsOut) #Proxy for shared array
         if cycles<multiprocessing.cpu_count():
-            mypool=multiprocessing.Pool(cycles)
+            mypool=multiprocessing.Pool(repeats)
         else:
             mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
 
