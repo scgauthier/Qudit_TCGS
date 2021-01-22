@@ -520,16 +520,20 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
             slopes.append(abs((FO[repeats-1+(z*repeats)]-FO[(repeats-2+(z*repeats))])/(state_param_list[repeats-1]-state_param_list[repeats-2])))
             slopes.append(None)
 
+        peak_locs=[]
         peaks=[]
         z=iters-1
         for y in range(1,repeats):
             if slopes[y+(z*repeats)]!=None and slopes[y+1+(z*repeats)]!=None and slopes[y-1+(z*repeats)]!=None:
-                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>2.2:
-                    crit_q=state_param_list[y]
-                    coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
-                    fid_in=coef_mat[0,0]
-                    min_fids[x]=coef_mat[0,0]
-                    break
+                if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
+                    peak_locs.append(state_param_list[y])
+                    peaks.append(abs(slopes[y+(z*repeats)]))
+        max_ind=peaks.index(max(peaks))
+        crit_q=peak_locs[max_ind]
+        coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
+        fid_in=coef_mat[0,0]
+        min_fids[x]=coef_mat[0,0]
+
         max_fids[x]=max(FO[(iters-1)*repeats : iters*repeats])
 
         mypool.close()
