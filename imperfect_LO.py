@@ -528,9 +528,12 @@ def get_purification_range(dim,num_nodes,graph_type,state_param_list,gate_er_par
                 if abs(slopes[y+(z*repeats)])>abs(slopes[y-1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>abs(slopes[y+1+(z*repeats)]) and abs(slopes[y+(z*repeats)])>1:
                     peak_locs.append(state_param_list[y])
                     peaks.append(abs(slopes[y+(z*repeats)]))
-        try: max_ind=peaks.index(max(peaks))
-        except ValueError: max_ind=0
-        crit_q=peak_locs[max_ind]
+        try:
+            max_ind=peaks.index(max(peaks))
+            crit_q=peak_locs[max_ind]
+        except ValueError:
+            max_ind=0
+            crit_q=0.0
         coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',crit_q)
         fid_in=coef_mat[0,0]
         min_fids[x]=coef_mat[0,0]
