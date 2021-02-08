@@ -210,18 +210,20 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,state_copy,coef_mat,
 
                         if compare_labels(labelOut,labelIn):
                             altered.append(labelOut)
-                            #print('altered',altered)
+
 
                     #determine which coefficients need to change and change them
-                    for entry in range(np.shape(altered)[0]):
-                        #graphs state basis label of coefficient to be updated
-                        focus=altered[entry]
-                        #get matrix indices of label
-                        id_indA1,id_indB1=match_label_to_index(dim,numA,numB,focus)
-                        #convert back to row and col of new_coef_mat
-                        id_row,id_col=index_convert(dim,numA,numB,id_indA1,id_indB1,indA2,indB2)
-                        #update coeficient matrix
-                        new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+                    try:
+                        for entry in range(np.shape(altered)[0]):
+                            #graphs state basis label of coefficient to be updated
+                            focus=altered[entry]
+                            #get matrix indices of label
+                            id_indA1,id_indB1=match_label_to_index(dim,numA,numB,focus)
+                            #convert back to row and col of new_coef_mat
+                            id_row,id_col=index_convert(dim,numA,numB,id_indA1,id_indB1,indA2,indB2)
+                            #update coeficient matrix
+                            new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+                    except UnboundLocalError: continue
 
                 elif state_copy=='second':
                     if current_coef>0:
@@ -234,18 +236,20 @@ def qudit_through_channel(dim,numA,numB,adj_mat,target_node,state_copy,coef_mat,
 
                         if compare_labels(labelOut,labelIn):
                             altered.append(labelOut)
-                            #print('altered',altered)
 
-                    #determine which coefficients need to change and change them
-                    for entry in range(np.shape(altered)[0]):
-                        #graphs state basis label of coefficient to be updated
-                        focus=altered[entry]
-                        #get matrix indices of label
-                        id_indA2,id_indB2=match_label_to_index(dim,numA,numB,focus)
-                        #convert back to row and col of new_coef_mat
-                        id_row,id_col=index_convert(dim,numA,numB,indA1,indB1,id_indA2,id_indB2)
-                        #update coeficient matrix
-                        new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+
+                    try:
+                        #determine which coefficients need to change and change them
+                        for entry in range(np.shape(altered)[0]):
+                            #graphs state basis label of coefficient to be updated
+                            focus=altered[entry]
+                            #get matrix indices of label
+                            id_indA2,id_indB2=match_label_to_index(dim,numA,numB,focus)
+                            #convert back to row and col of new_coef_mat
+                            id_row,id_col=index_convert(dim,numA,numB,indA1,indB1,id_indA2,id_indB2)
+                            #update coeficient matrix
+                            new_coef_mat[id_row,id_col]+=current_coef*(param/(dim**2 -1))
+                    except UnboundLocalError: continue
 
     return new_coef_mat
 
