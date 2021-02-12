@@ -14,7 +14,7 @@ def one_param_fam_psucc(Fin,dim,subset_node_num):
     return psucc
 
 def one_param_fam_Von_Neuman_Ent(Fid,dim,subset_node_num):
-    return (Fid*log((1-Fid)/(Fid*(dim**subset_node_num -1))) - log((1-Fid)/(dim**subset_node_num -1)))
+    return (Fid*(log((1-Fid)/(Fid*(dim**subset_node_num -1)))/log(dim)) - log((1-Fid)/(dim**subset_node_num -1))/log(dim))
 
 def plot_one_param_fam_fout_vs_fin(subset_node_num,dimList):
 
@@ -108,16 +108,40 @@ def plot_one_param_fam_entratio_vs_entin(subset_node_num,dimList):
         plt.plot(entsIn,entRat,'-',label="d = %s " % (dim))
     plt.legend(loc='upper right',fontsize=14)
     plt.yscale('log')
-    plt.xlabel('Initial Von Neumann Entropy',fontsize=20)
+    plt.xlabel('Initial Entropy',fontsize=20)
     plt.ylabel('Ratio of Initial to Final Entropy',fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.ylim((1,10e6))
     plt.show()
 
+def plot_one_param_fam_entratio_vs_fidin(subset_node_num,dimList):
+    plt.figure()
+    for y in range(0,np.size(dimList)):
+        dim=dimList[y]
+        entRat=[]
+        min_fid=1/(dim**subset_node_num)
+        fidList=np.arange(min_fid+0.001,1,0.002)
+        for x in range(0,np.size(fidList)):
+            fid=fidList[x]
+            entIn=one_param_fam_Von_Neuman_Ent(fid,dim,subset_node_num)
+            fidOut=one_parameter_family(fid,dim,subset_node_num)
+            entOut=one_param_fam_Von_Neuman_Ent(fidOut,dim,subset_node_num)
+            entRat.append(entIn/entOut)
+        plt.plot(fidList,entRat,'-',label="d = %s " % (dim))
+    plt.legend(loc='upper right',fontsize=14)
+    plt.yscale('log')
+    plt.xlabel('Initial Fidelity',fontsize=20)
+    plt.ylabel('Ratio of Initial to Final Entropy',fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    # plt.ylim((1,10e6))
+    plt.show()
+
 
 # plot_one_param_fam_entin_vs_fid(3,[2,3,5,7,9,11,13])
 plot_one_param_fam_entratio_vs_entin(3,[2,3,5,7,9,11,13])
+# plot_one_param_fam_entratio_vs_fidin(3,[2,3,5,7,9,11,13])
 # plot_one_param_fam_fout_vs_fin(1,[2,3,5,7,9,11,13])
 
 #plot_one_param_fam_psucc_vs_fin(5,[2,3,5,7,11,13],np.arange(0.501,1,0.01))
