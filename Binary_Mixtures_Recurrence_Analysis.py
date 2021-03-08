@@ -18,13 +18,19 @@ def one_param_fam_Von_Neuman_Ent(Fid,dim,subset_node_num):
 
 def plot_one_param_fam_fout_vs_fin(subset_node_num,dimList):
 
+    plt.figure(figsize=(12,8))
+    cmap = plt.cm.get_cmap('plasma')
+    ind=np.linspace(0,0.75,6)
+    colors = [cmap(ind[0]),cmap(ind[1]),cmap(ind[2]),cmap(ind[3]),cmap(ind[4]),cmap(ind[5])]
+    track=0
     for y in range(0,np.size(dimList)):
         dim=dimList[y]
         fidList=np.arange(1/(dim**subset_node_num),1,0.001)
         fidOutList=[]
         for x in range(0,np.size(fidList)):
             fidOutList.append(one_parameter_family(fidList[x],dim,subset_node_num))
-        plt.plot(fidList,fidOutList,label="dim = %s " % (dim))
+        plt.plot(fidList,fidOutList,c=colors[track], label="dim = %s " % (dim))
+        track+=1
     plt.legend(loc='lower right',fontsize=14)
     plt.xlim([-0.04,1.04])
     plt.xticks(fontsize=20)
@@ -91,7 +97,11 @@ def plot_one_param_fam_entdiff_vs_entin(subset_node_num,dimList):
     plt.show()
 
 def plot_one_param_fam_entratio_vs_entin(subset_node_num,dimList):
-    plt.figure()
+    plt.figure(figsize=(12,8))
+    cmap = plt.cm.get_cmap('plasma')
+    ind=np.linspace(0,0.75,6)
+    colors = [cmap(ind[0]),cmap(ind[1]),cmap(ind[2]),cmap(ind[3]),cmap(ind[4]),cmap(ind[5])]
+    track=0
     for y in range(0,np.size(dimList)):
         dim=dimList[y]
         entRat=[]
@@ -105,7 +115,8 @@ def plot_one_param_fam_entratio_vs_entin(subset_node_num,dimList):
             fidOut=one_parameter_family(fid,dim,subset_node_num)
             entOut=one_param_fam_Von_Neuman_Ent(fidOut,dim,subset_node_num)
             entRat.append(entIn/entOut)
-        plt.plot(entsIn,entRat,'-',label="d = %s " % (dim))
+        plt.plot(entsIn,entRat,'-',c=colors[track],label="d = %s " % (dim))
+        track+=1
     plt.legend(loc='upper right',fontsize=14)
     plt.yscale('log')
     plt.xlabel('Initial Entropy',fontsize=20)
@@ -140,8 +151,8 @@ def plot_one_param_fam_entratio_vs_fidin(subset_node_num,dimList):
 
 
 # plot_one_param_fam_entin_vs_fid(3,[2,3,5,7,9,11,13])
-plot_one_param_fam_entratio_vs_entin(3,[2,3,5,7,9,11,13])
+plot_one_param_fam_entratio_vs_entin(3,[2,3,5,7,11,13])
 # plot_one_param_fam_entratio_vs_fidin(3,[2,3,5,7,9,11,13])
-# plot_one_param_fam_fout_vs_fin(1,[2,3,5,7,9,11,13])
+# plot_one_param_fam_fout_vs_fin(1,[2,3,5,7,11,13])
 
 #plot_one_param_fam_psucc_vs_fin(5,[2,3,5,7,11,13],np.arange(0.501,1,0.01))

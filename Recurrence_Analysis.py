@@ -180,18 +180,20 @@ def single_plot(fids,psuccs,pcum_list,subP):
     xdat=range(0,np.size(fids))
 
     fig,ax1=plt.subplots()
-
+    cmap = plt.cm.get_cmap('plasma')
+    colors = [cmap(0),cmap(0.34),cmap(0.6)]
     ax2=ax1.twinx()
-    ax1.plot(xdat,fids,'blue',label='Fidelity')
-    ax2.plot(xdat,pcum_list,'x',markersize=10,label='Cumulative Probability')
-    ax2.plot(xdat,psuccs,'ro',label='Stage probability')
+    ax1.plot(xdat,fids,c=colors[0],label='Fidelity')
+    ax2.scatter(xdat,pcum_list,marker='s',c=colors[2],label='Cumulative Probability')
+    ax2.scatter(xdat,psuccs,marker='o',c=colors[1],label='Stage probability')
     ax1.set_xlabel('Purifications applied (beginning with {})'.format(subP),fontsize=18)
-    ax1.set_ylabel('Fidelity',color='blue',fontsize=18)
+    ax1.set_ylabel('Fidelity',color=colors[0],fontsize=18)
     ax2.set_ylabel('Probaility of success',fontsize=18)
     ax2.legend(fontsize=14)
     ax1.tick_params(axis="x", labelsize=18)
     ax1.tick_params(axis="y", labelsize=18)
     ax2.tick_params(axis="y", labelsize=18)
+    ax2.yscale('log')
     plt.show()
 
 #**************************************************************************#
@@ -361,5 +363,64 @@ def run_depolarized_study(dim,num_nodes,graph_type,paramList,subP,iters,alternat
         plt.close()
 
 
+#***************************************************************************#
+#for efficiency study with depolarized states
+#***************************************************************************#
+def get_itersNeeded(param_tuple):
+    """wrapper preparing for using map (which has issues with multiple variables
+    -> pack all vars in one tuple). x[0]<-num_nodes, x[1]<-graph_type,x[2]<-max_iters,x[3]<-param
+    x[4]<-target, x[5]<-subP, x[6]<-dim/x"""
+
+    num_nodes,graph_type,max_iters,param,target,subP,dim=param_tuple #unpack
+
+    csubP=subP
+
+    clean_coef_mat=get_input_coefficients(num_nodes,dim,graph_type,'DP',param)
+    coef_mat=np.copy(clean_coef_mat)
+
+    Fin=clean_coef_mat[0,0]
+    FC=clean_coef_mat[0,0]
+    iter=0
+    pcum=1
+
+    while FC<target and iter<max_iters:
+        iter+=1
+
+        if csubP=='P1':
+            normK,coef_mat=P1_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+            csubP='P2'
+
+        elif csubP=='P2':
+            normK,coef_mat=P2_update_coefficients(num_nodes,dim,graph_type,coef_mat)
+            csubP='P1'
+        else:
+            print('field subP should be specified as either P1 or P2 \n', 'Example: to start with P1 enter P1')
+            return
+        FC=coef_mat[0,0]
+        pcum*=normK
+
+    #Keep record number of purifications needed
+    filename='../Efficiency_INO/{}_{}_{}_repetitions.txt'.format(graph_type,num_nodes,subP)
+    afile=open(filename,'a')
+    afile.write('dim {}, F in {}, iterations needed {}, F out: {}, cumulative Psucc: {}\n'.format(dim,Fin,iter,FC,pcum))
+    afile.close()
+
 #**************************************************************************#
+###Depolarizing Noise on input: 20%
+##Target fidelity: 0.99
+#Nodes: Study for 3 and 7 for linear cluster states
+#How many rounds of distillation needed to achieve target?
+#**************************************************************************#
+def efficiency_study(dimlist,num_nodes,graph_type,subP,max_iters,param,target):
+    extent=np.shape(dimlist)[0]
+    #set up multiprocessing
+    manager=multiprocessing.Manager() #create manager to handle shared objects
+    if extent<multiprocessing.cpu_count():
+        mypool=multiprocessing.Pool(extent)
+    else:
+        mypool=multiprocessing.Pool(multiprocessing.cpu_count()) #Create pool of worker processes
+
+    #update fidelities
+    mypool.map(get_itersNeeded,[(num_nodes,graph_type,max_iters,param,target,subP,dim) for dim in dimlist])
+
 # print("--- %s seconds ---" % (time.time()-start_time))
