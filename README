@@ -1,3 +1,5 @@
+For citation:  DOI: 10.5281/zenodo.4675772
+
 The files relevant for the chapter 7 of my MSc thesis "Recurrence Based Purification of Qudit Graph States" are:
 
 1. imperfect_LO.py, which provides the functionality for simulating the protocol with gate errors.
