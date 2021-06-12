@@ -1,0 +1,19 @@
+For citation:  DOI: 10.5281/zenodo.4675772
+
+The files relevant for the chapter 7 of my MSc thesis "Recurrence Based Purification of Qudit Graph States" are:
+
+1. imperfect_LO.py, which provides the functionality for simulating the protocol with gate errors.
+
+2. utils.py, which provides several utility functions called upon by the simulation procedue, such as functions 
+for matching density matrix entries to the label of a graph basis state.
+
+3. weyl_covariant_channel.py, which prepares and saves text files corresponding to depolarized input states. 
+
+The files relevant for chapter 6 of my thesis are:
+
+1. Recurrence_Analysis.py, which numerically calculates the states output by the error-less purification protocol, 
+using equations 5.13 and 5.16 from my thesis. It can be used to conduct a study to determine the minimum required input fidelity to achieve purification. 
+
+2. utils.py, providing utility functions
+
+3. weyl_covariant_channel.py, which prepares and saves text files corresponding to depolarized input states. 
